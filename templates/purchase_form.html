@@ -118,6 +118,24 @@
   .sticky-actions button{flex:1}
 }
 
+
+/* توحيد ارتفاع خانة التاريخ مع بقية الحقول */
+.purchase-top-grid input[type="date"]{
+  height:40px !important;
+  min-height:40px !important;
+  padding:6px 10px !important;
+  line-height:1.2 !important;
+  box-sizing:border-box !important;
+  -webkit-appearance:none;
+  appearance:none;
+}
+@media(min-width:561px){
+  .purchase-top-grid input[type="date"]{
+    height:42px !important;
+    min-height:42px !important;
+  }
+}
+
 </style>
 
 <form method="post" id="purchaseForm">
