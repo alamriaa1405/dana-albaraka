@@ -4,18 +4,13 @@
 {% block c %}
 
 <style>
-.purchase-top-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end}
+.purchase-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 28px;align-items:end}
 .purchase-top-grid .field label{display:block;margin-bottom:5px;font-weight:700}
 .purchase-top-grid input,.purchase-top-grid select,
 .purchase-items input,.purchase-items select,.payment-bottom select{
   width:100%;box-sizing:border-box
 }
-.inline-supplier{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 44px;
-  gap:7px;
-  align-items:stretch
-}
+.inline-supplier{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:8px;align-items:stretch}
 .inline-supplier select{min-width:0}
 .inline-supplier .supplier-add{
   width:44px;
@@ -47,12 +42,9 @@
 .payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .attachment-drop{border:1px dashed #b9c9cb;border-radius:10px;min-height:165px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
 .attach-actions{display:flex;gap:8px;align-items:center}
-@media(max-width:850px){
-  .purchase-top-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .payment-grid{grid-template-columns:1fr}
-}
+@media(max-width:850px){.purchase-top-grid{grid-template-columns:1fr 1fr;gap:12px}.payment-grid{grid-template-columns:1fr}}
 @media(max-width:560px){
-  .purchase-top-grid{grid-template-columns:1fr;gap:9px}
+  .purchase-top-grid{grid-template-columns:1fr;gap:10px}
   .purchase-top-grid .field{margin:0}
   .purchase-top-grid .field label{margin-bottom:4px}
   .inline-supplier{grid-template-columns:minmax(0,1fr) 42px}
@@ -60,6 +52,24 @@
   .purchase-top-grid input,.purchase-top-grid select{min-height:42px}
   .purchase-search{flex-direction:column}
 }
+  .purchase-top-grid .field{margin:0}
+  .purchase-top-grid .field label{margin-bottom:4px}
+  .inline-supplier{grid-template-columns:minmax(0,1fr) 42px}
+  .inline-supplier .supplier-add{width:42px;min-width:42px;height:42px}
+  .purchase-top-grid input,.purchase-top-grid select{min-height:42px}
+  .purchase-search{flex-direction:column}
+}
+
+.purchase-top-grid .field{min-width:0}
+.purchase-top-grid label{font-size:14px}
+.purchase-top-grid input,.purchase-top-grid select{height:46px}
+@media(min-width:851px){
+  .top-supplier{grid-column:1;grid-row:1}
+  .top-branch{grid-column:2;grid-row:1}
+  .top-date{grid-column:1;grid-row:2}
+  .top-invoice{grid-column:2;grid-row:2}
+}
+
 </style>
 
 <form method="post" id="purchaseForm">
@@ -68,7 +78,7 @@
   <h2>تفاصيل الفاتورة</h2>
 
   <div class="purchase-top-grid">
-    <div class="field">
+    <div class="field top-supplier">
       <label>اسم المورد *</label>
       <div class="inline-supplier">
         <select name="supplier_id" required>
@@ -81,19 +91,19 @@
       </div>
     </div>
 
-    <div class="field">
+    <div class="field top-branch">
       <label>الفرع</label>
       <select name="location">
         <option>الفرع الرئيسي</option>
       </select>
     </div>
 
-    <div class="field">
+    <div class="field top-date">
       <label>التاريخ</label>
       <input name="supplier_invoice_date" type="date">
     </div>
 
-    <div class="field">
+    <div class="field top-invoice">
       <label>رقم الفاتورة</label>
       <input name="invoice_no" placeholder="رقم فاتورة المورد">
     </div>
