@@ -1,3 +1,33 @@
-{% extends "base.html" %}{% block page_title %}المنتجات{% endblock %}{% block page_subtitle %}إدارة المنتجات والمخزون{% endblock %}{% block c %}
+{% extends "base.html" %}{% block page_title %}المنتجات<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script>
+document.addEventListener('click',e=>{
+ const b=e.target.closest('.barcode-print-list'); if(!b)return;
+ const sku=b.dataset.sku; if(!sku){alert('لا يوجد SKU لهذا المنتج');return;}
+ const w=window.open('','_blank','width=480,height=620');
+ w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma;text-align:center;padding:24px}.label{width:360px;margin:auto;padding:18px;border:1px solid #ddd;border-radius:8px}@media print{button{display:none}.label{border:0}}</style></head><body><div class="label"><h3>${b.dataset.name}</h3><svg id="bc"></svg><div>${sku}</div></div><button onclick="print()">طباعة</button><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>JsBarcode('#bc',${JSON.stringify(sku)},{format:'CODE128',displayValue:false,height:70,margin:8});<\/script></body></html>`);
+ w.document.close();
+});
+</script>
+{% endblock %}{% block page_subtitle %}إدارة المنتجات والمخزون<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script>
+document.addEventListener('click',e=>{
+ const b=e.target.closest('.barcode-print-list'); if(!b)return;
+ const sku=b.dataset.sku; if(!sku){alert('لا يوجد SKU لهذا المنتج');return;}
+ const w=window.open('','_blank','width=480,height=620');
+ w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma;text-align:center;padding:24px}.label{width:360px;margin:auto;padding:18px;border:1px solid #ddd;border-radius:8px}@media print{button{display:none}.label{border:0}}</style></head><body><div class="label"><h3>${b.dataset.name}</h3><svg id="bc"></svg><div>${sku}</div></div><button onclick="print()">طباعة</button><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>JsBarcode('#bc',${JSON.stringify(sku)},{format:'CODE128',displayValue:false,height:70,margin:8});<\/script></body></html>`);
+ w.document.close();
+});
+</script>
+{% endblock %}{% block c %}
 <div class="toolbar"><form method="get" class="search"><input name="q" value="{{q}}" placeholder="البحث باسم المنتج أو SKU"><button>بحث</button></form><a class="btn primary" href="/products/new">+ منتج</a><button class="ghost">تصفية</button><button class="ghost">تخصيص الأعمدة</button></div>
-<section class="panel"><div class="table-wrap"><table><tr><th>اسم المنتج</th><th>الفئة</th><th>الرقم التعريفي</th><th>SKU</th><th>الكمية المتاحة</th><th>التكلفة</th><th>سعر البيع</th><th>الإجراءات</th></tr>{% for p in rows %}<tr><td><b>{{p.name}}</b></td><td>{{p.category or '-'}}</td><td>{{p.sku or p.id}}</td><td>{{p.sku or '-'}}</td><td>{{p.stock}}</td><td>{{p.cost}}</td><td>{{p.sale_price}}</td><td><a href="/products/edit/{{p.id}}">✎ تعديل</a></td></tr>{% endfor %}</table></div></section>{% endblock %}
+<section class="panel"><div class="table-wrap"><table><tr><th>اسم المنتج</th><th>الفئة</th><th>الرقم التعريفي</th><th>SKU</th><th>الكمية المتاحة</th><th>التكلفة</th><th>سعر البيع</th><th>الإجراءات</th></tr>{% for p in rows %}<tr><td><b>{{p.name}}</b></td><td>{{p.category or '-'}}</td><td>{{p.sku or p.id}}</td><td>{{p.sku or '-'}}</td><td>{{p.stock}}</td><td>{{p.cost}}</td><td>{{p.sale_price}}</td><td><a href="/products/edit/{{p.id}}">✎ تعديل</a> <button type="button" class="link-btn barcode-print-list" data-sku="{{p.sku or ''}}" data-name="{{p.name}}">🖨 باركود</button></td></tr>{% endfor %}</table></div></section><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script>
+document.addEventListener('click',e=>{
+ const b=e.target.closest('.barcode-print-list'); if(!b)return;
+ const sku=b.dataset.sku; if(!sku){alert('لا يوجد SKU لهذا المنتج');return;}
+ const w=window.open('','_blank','width=480,height=620');
+ w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma;text-align:center;padding:24px}.label{width:360px;margin:auto;padding:18px;border:1px solid #ddd;border-radius:8px}@media print{button{display:none}.label{border:0}}</style></head><body><div class="label"><h3>${b.dataset.name}</h3><svg id="bc"></svg><div>${sku}</div></div><button onclick="print()">طباعة</button><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><script>JsBarcode('#bc',${JSON.stringify(sku)},{format:'CODE128',displayValue:false,height:70,margin:8});<\/script></body></html>`);
+ w.document.close();
+});
+</script>
+{% endblock %}

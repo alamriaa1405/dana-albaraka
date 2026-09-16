@@ -1,7 +1,98 @@
 {% extends "base.html" %}
-{% block page_title %}{{'تحرير المنتج' if p else 'منتج جديد'}}{% endblock %}
-{% block page_subtitle %}المنتجات › {{'تحرير' if p else 'منتج جديد'}}{% endblock %}
+{% block page_title %}{{'تحرير المنتج' if p else 'منتج جديد'}}
+<script>
+function printBarcodeValue(value, title){
+  value=(value||'').trim();
+  if(!value){ alert('أدخل أو ولّد SKU أولاً'); return; }
+
+  const w=window.open('', '_blank', 'width=480,height=620');
+  w.document.write(`
+    <html dir="rtl"><head><meta charset="utf-8"><title>طباعة الباركود</title>
+    <style>
+      body{font-family:Tahoma,Arial,sans-serif;margin:0;padding:24px;text-align:center}
+      .label{width:360px;margin:auto;border:1px solid #ddd;border-radius:8px;padding:18px}
+      h3{margin:0 0 12px;font-size:18px}
+      .sku{margin-top:8px;font-size:14px}
+      button{margin-top:18px;padding:10px 18px;font:inherit}
+      @media print{button{display:none}.label{border:0}}
+    </style></head>
+    <body><div class="label"><h3>${title||'المنتج'}</h3><svg id="barcode"></svg><div class="sku">${value}</div></div>
+    <button onclick="window.print()">طباعة</button>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+    <script>JsBarcode('#barcode', ${JSON.stringify(value)}, {format:'CODE128',displayValue:false,height:70,margin:8});<\/script>
+    </body></html>`);
+  w.document.close();
+}
+document.addEventListener('click', e=>{
+  const b=e.target.closest('.barcode-print');
+  if(!b) return;
+  let input;
+  let title='المنتج';
+  const row=b.closest('.sku-row');
+  if(row) input=row.querySelector('input');
+  if(b.dataset.source==='sku') input=document.getElementById('sku');
+
+  const pack=b.closest('.bundle-setup-row');
+  if(pack){
+    const n=pack.querySelector('input[name="pack_name[]"]');
+    if(n && n.value) title=n.value;
+  } else {
+    const n=document.querySelector('input[name="name"]');
+    if(n && n.value) title=n.value;
+  }
+  printBarcodeValue(input ? input.value : '', title);
+});
+</script>
+
+{% endblock %}
+{% block page_subtitle %}المنتجات › {{'تحرير' if p else 'منتج جديد'}}
+<script>
+function printBarcodeValue(value, title){
+  value=(value||'').trim();
+  if(!value){ alert('أدخل أو ولّد SKU أولاً'); return; }
+
+  const w=window.open('', '_blank', 'width=480,height=620');
+  w.document.write(`
+    <html dir="rtl"><head><meta charset="utf-8"><title>طباعة الباركود</title>
+    <style>
+      body{font-family:Tahoma,Arial,sans-serif;margin:0;padding:24px;text-align:center}
+      .label{width:360px;margin:auto;border:1px solid #ddd;border-radius:8px;padding:18px}
+      h3{margin:0 0 12px;font-size:18px}
+      .sku{margin-top:8px;font-size:14px}
+      button{margin-top:18px;padding:10px 18px;font:inherit}
+      @media print{button{display:none}.label{border:0}}
+    </style></head>
+    <body><div class="label"><h3>${title||'المنتج'}</h3><svg id="barcode"></svg><div class="sku">${value}</div></div>
+    <button onclick="window.print()">طباعة</button>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+    <script>JsBarcode('#barcode', ${JSON.stringify(value)}, {format:'CODE128',displayValue:false,height:70,margin:8});<\/script>
+    </body></html>`);
+  w.document.close();
+}
+document.addEventListener('click', e=>{
+  const b=e.target.closest('.barcode-print');
+  if(!b) return;
+  let input;
+  let title='المنتج';
+  const row=b.closest('.sku-row');
+  if(row) input=row.querySelector('input');
+  if(b.dataset.source==='sku') input=document.getElementById('sku');
+
+  const pack=b.closest('.bundle-setup-row');
+  if(pack){
+    const n=pack.querySelector('input[name="pack_name[]"]');
+    if(n && n.value) title=n.value;
+  } else {
+    const n=document.querySelector('input[name="name"]');
+    if(n && n.value) title=n.value;
+  }
+  printBarcodeValue(input ? input.value : '', title);
+});
+</script>
+
+{% endblock %}
 {% block c %}
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <form method="post" class="product-form" id="productForm">
 
 <section class="panel">
@@ -168,4 +259,49 @@ document.getElementById('addPack').addEventListener('click',()=>{
   document.getElementById('packRows').appendChild(node);
 });
 </script>
+
+<script>
+function printBarcodeValue(value, title){
+  value=(value||'').trim();
+  if(!value){ alert('أدخل أو ولّد SKU أولاً'); return; }
+
+  const w=window.open('', '_blank', 'width=480,height=620');
+  w.document.write(`
+    <html dir="rtl"><head><meta charset="utf-8"><title>طباعة الباركود</title>
+    <style>
+      body{font-family:Tahoma,Arial,sans-serif;margin:0;padding:24px;text-align:center}
+      .label{width:360px;margin:auto;border:1px solid #ddd;border-radius:8px;padding:18px}
+      h3{margin:0 0 12px;font-size:18px}
+      .sku{margin-top:8px;font-size:14px}
+      button{margin-top:18px;padding:10px 18px;font:inherit}
+      @media print{button{display:none}.label{border:0}}
+    </style></head>
+    <body><div class="label"><h3>${title||'المنتج'}</h3><svg id="barcode"></svg><div class="sku">${value}</div></div>
+    <button onclick="window.print()">طباعة</button>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+    <script>JsBarcode('#barcode', ${JSON.stringify(value)}, {format:'CODE128',displayValue:false,height:70,margin:8});<\/script>
+    </body></html>`);
+  w.document.close();
+}
+document.addEventListener('click', e=>{
+  const b=e.target.closest('.barcode-print');
+  if(!b) return;
+  let input;
+  let title='المنتج';
+  const row=b.closest('.sku-row');
+  if(row) input=row.querySelector('input');
+  if(b.dataset.source==='sku') input=document.getElementById('sku');
+
+  const pack=b.closest('.bundle-setup-row');
+  if(pack){
+    const n=pack.querySelector('input[name="pack_name[]"]');
+    if(n && n.value) title=n.value;
+  } else {
+    const n=document.querySelector('input[name="name"]');
+    if(n && n.value) title=n.value;
+  }
+  printBarcodeValue(input ? input.value : '', title);
+});
+</script>
+
 {% endblock %}
