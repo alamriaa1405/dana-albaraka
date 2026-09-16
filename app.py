@@ -253,6 +253,8 @@ def init_db():
         "suppliers":["email TEXT","city TEXT","credit_limit REAL DEFAULT 0","active INTEGER DEFAULT 1"],
         "sales":["location TEXT DEFAULT 'الفرع الرئيسي'","employee TEXT","paid REAL DEFAULT 0"],
         "expenses":["category TEXT","location TEXT DEFAULT 'الفرع الرئيسي'","status TEXT DEFAULT 'مدفوع'"],
+        "purchases":["supplier_invoice_date TEXT","due_date TEXT"],
+        "purchase_items":["discount REAL DEFAULT 0","vat_rate REAL DEFAULT 15","tax_amount REAL DEFAULT 0"],
     }.items():
         for d in defs:
             ensure_column(c, table, d)
@@ -626,21 +628,59 @@ def purchase_new():
     if not allowed("مشتريات"): flash("لا توجد صلاحية"); return redirect("/")
     c=db(); sups=c.execute("SELECT * FROM suppliers ORDER BY name").fetchall()
     if request.method=="POST":
-        f=request.form; p=find_product(c,f.get("product_code"))
-        if not p: c.close(); flash("المنتج غير موجود"); return redirect("/purchases/new")
-        qty=float(f.get("qty") or 1)*float(p["mult"] or 1); cost=float(f.get("unit_cost") or 0); total=qty*cost
-        status=f.get("status") or "معتمدة"; pay=f.get("payment_status") or "مدفوع"; method=f.get("payment_method") or "نقدي"
-        cur=c.execute("""INSERT INTO purchases(created_at,supplier_id,invoice_no,status,payment_status,payment_method,attachment,total,location)
-                         VALUES(?,?,?,?,?,?,?,?,?)""",(now(),f.get("supplier_id") or None,f.get("invoice_no"),status,pay,method,f.get("attachment"),total,"الفرع الرئيسي"))
-        pid=cur.lastrowid
-        c.execute("INSERT INTO purchase_items(purchase_id,product_id,qty,unit_cost,subtotal) VALUES(?,?,?,?,?)",(pid,p["id"],qty,cost,total))
-        if status=="معتمدة":
-            warning=cost>float(p["cost"] or 0)>0
-            c.execute("UPDATE products SET stock=stock+?,cost=? WHERE id=?",(qty,cost,p["id"]))
-            if f.get("supplier_id") and pay!="مدفوع": c.execute("UPDATE suppliers SET balance=balance+? WHERE id=?",(total,f.get("supplier_id")))
-        c.commit(); c.close(); flash(("تنبيه: سعر الشراء أعلى من التكلفة السابقة. " if warning else "")+"تم حفظ فاتورة الشراء"); return redirect("/purchases")
-    c.close(); return render_template("purchase_form.html",suppliers=sups)
+        f=request.form
+        codes=request.form.getlist("product_code[]")
+        qtys=request.form.getlist("qty[]")
+        costs=request.form.getlist("unit_cost[]")
+        discounts=request.form.getlist("discount[]")
+        vats=request.form.getlist("vat_rate[]")
 
+        status=f.get("status") or "معتمدة"
+        pay=f.get("payment_status") or "مدفوع"
+        method=f.get("payment_method") or "نقدي"
+        supplier_id=f.get("supplier_id") or None
+
+        items=[]; total=0; warning=False
+        for i,code in enumerate(codes):
+            code=(code or "").strip()
+            if not code: continue
+            p=find_product(c,code)
+            if not p:
+                c.close(); flash("يوجد SKU غير صحيح أو منتج غير موجود: "+code); return redirect("/purchases/new")
+            entered_qty=float(qtys[i] if i < len(qtys) and qtys[i] else 1)
+            qty=entered_qty*float(p["mult"] or 1)
+            cost=float(costs[i] if i < len(costs) and costs[i] else 0)
+            discount=float(discounts[i] if i < len(discounts) and discounts[i] else 0)
+            vat_rate=float(vats[i] if i < len(vats) and vats[i] else 15)
+            base=max(0, entered_qty*cost-discount)
+            tax=base*(vat_rate/100.0)
+            line_total=base+tax
+            total+=line_total
+            if cost > float(p["cost"] or 0) > 0: warning=True
+            items.append((p,qty,cost,base,discount,vat_rate,tax,line_total))
+
+        if not items:
+            c.close(); flash("أضف منتجًا واحدًا على الأقل"); return redirect("/purchases/new")
+
+        cur=c.execute("""INSERT INTO purchases(created_at,supplier_id,invoice_no,status,payment_status,payment_method,attachment,total,location,supplier_invoice_date,due_date)
+                         VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                      (now(),supplier_id,f.get("invoice_no"),status,pay,method,f.get("attachment"),
+                       total,f.get("location") or "الفرع الرئيسي",f.get("supplier_invoice_date") or None,f.get("due_date") or None))
+        pid=cur.lastrowid
+
+        for p,qty,cost,base,discount,vat_rate,tax,line_total in items:
+            c.execute("""INSERT INTO purchase_items(purchase_id,product_id,qty,unit_cost,subtotal,discount,vat_rate,tax_amount)
+                         VALUES(?,?,?,?,?,?,?,?)""",(pid,p["id"],qty,cost,base,discount,vat_rate,tax))
+            if status=="معتمدة":
+                c.execute("UPDATE products SET stock=stock+?,cost=? WHERE id=?",(qty,cost,p["id"]))
+
+        if status=="معتمدة" and supplier_id and pay!="مدفوع":
+            c.execute("UPDATE suppliers SET balance=balance+? WHERE id=?",(total,supplier_id))
+
+        c.commit(); c.close()
+        flash(("تنبيه: يوجد سعر شراء أعلى من التكلفة السابقة. " if warning else "")+"تم حفظ فاتورة الشراء")
+        return redirect("/purchases")
+    c.close(); return render_template("purchase_form.html",suppliers=sups)
 @app.route("/purchase-returns",methods=["GET","POST"])
 def purchase_returns():
     c=db(); sups=c.execute("SELECT * FROM suppliers ORDER BY name").fetchall()
