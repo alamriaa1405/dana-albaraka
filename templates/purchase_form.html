@@ -136,6 +136,28 @@
   }
 }
 
+
+/* تحسين مظهر حقل التاريخ على الآيفون */
+.purchase-top-grid input[type="date"]{
+  color:#1f2b2d !important;
+  background-color:#fff !important;
+  position:relative;
+  padding-inline:12px 40px !important;
+}
+.purchase-top-grid input[type="date"]::-webkit-calendar-picker-indicator{
+  opacity:1 !important;
+  cursor:pointer;
+  width:20px;
+  height:20px;
+  margin:0;
+}
+.purchase-top-grid input[type="date"]::-webkit-datetime-edit{
+  color:#1f2b2d;
+}
+.purchase-top-grid input[type="date"]:invalid::-webkit-datetime-edit{
+  color:#9aa3a6;
+}
+
 </style>
 
 <form method="post" id="purchaseForm">
