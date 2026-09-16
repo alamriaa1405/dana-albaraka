@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block c %}<h1>فاتورة مشتريات</h1><p>عند إدخال تكلفة أعلى من التكلفة السابقة سيظهر تنبيه. إرفاق الفاتورة اختياري.</p><form method="post" class="grid">
+<select name="product_id" required><option value="">اختر المنتج</option>{% for p in products %}<option value="{{p.id}}">{{p.name}} — تكلفة حالية {{p.cost}}</option>{% endfor %}</select>
+<select name="supplier_id"><option value="">المورد اختياري</option>{% for s in suppliers %}<option value="{{s.id}}">{{s.name}}</option>{% endfor %}</select>
+<input name="qty" type="number" step=".01" placeholder="الكمية" required><input name="unit_cost" type="number" step=".01" placeholder="سعر الشراء" required>
+<input name="attachment" placeholder="مرجع/اسم ملف الفاتورة (اختياري)"><button>اعتماد المشتريات</button></form>{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block c %}<h1>المنتجات والمخزون</h1><form method="post" class="grid">
+<input name="name" placeholder="اسم المنتج" required><input name="category" placeholder="التصنيف (اختياري)">
+<input name="barcode_piece" placeholder="باركود الحبة"><input name="barcode_pack" placeholder="باركود الحزمة"><input name="pack_qty" type="number" placeholder="عدد الحبات بالحزمة">
+<input name="barcode_carton" placeholder="باركود الكرتون"><input name="carton_qty" type="number" placeholder="عدد الحبات بالكرتون">
+<input name="cost" type="number" step=".01" placeholder="التكلفة"><input name="sale_price" type="number" step=".01" placeholder="سعر البيع">
+<input name="stock" type="number" step=".01" placeholder="الرصيد"><input name="min_stock" type="number" step=".01" placeholder="حد التنبيه">
+<input name="expiry" type="date"><button>إضافة المنتج</button></form>
+<table><tr><th>المنتج</th><th>الباركود</th><th>التكلفة</th><th>البيع</th><th>الرصيد</th><th>الصلاحية</th></tr>
+{% for p in rows %}<tr><td>{{p.name}}</td><td>{{p.barcode_piece or "-"}}</td><td>{{p.cost}}</td><td>{{p.sale_price}}</td><td>{{p.stock}}</td><td>{{p.expiry or "-"}}</td></tr>{% endfor %}</table>{% endblock %}
