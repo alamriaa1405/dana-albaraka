@@ -1,4 +1,181 @@
-{% extends "base.html" %}{% block page_title %}فاتورة شراء جديدة{% endblock %}{% block page_subtitle %}فواتير المشتريات › فاتورة شراء جديدة{% endblock %}{% block c %}<form method="post">
-<section class="panel"><div class="form-grid"><select name="supplier_id"><option value="">المورد</option>{% for s in suppliers %}<option value="{{s.id}}">{{s.name}}</option>{% endfor %}</select><input name="invoice_no" placeholder="رقم فاتورة المورد"><select name="status"><option>مسودة</option><option selected>معتمدة</option></select><select name="payment_status"><option>مدفوع</option><option>غير مدفوع</option></select><select name="payment_method"><option>نقدي</option><option>مدى</option><option>تحويل</option><option>آجل</option></select><input name="attachment" placeholder="مرفق الفاتورة (اختياري)"></div></section>
-<section class="panel"><h2>المنتجات</h2><div class="form-grid"><div class="field span2"><label>SKU / قراءة الباركود</label><input id="pc" name="product_code" required autofocus></div><input name="qty" type="number" step="0.01" value="1"><input name="unit_cost" type="number" step="0.01" placeholder="سعر الشراء"><small id="ph" class="span2"></small><button type="button" class="ghost">+ منتج جديد</button></div></section><div class="sticky-actions"><a class="btn ghost" href="/purchases">إلغاء</a><button class="primary">حفظ الفاتورة</button></div></form>
-<script>let z;pc.oninput=()=>{clearTimeout(z);z=setTimeout(async()=>{let r=await fetch('/api/product-by-code?code='+encodeURIComponent(pc.value));let d=await r.json().catch(()=>({}));ph.textContent=d.ok?'المنتج: '+d.name+' — التكلفة الحالية '+d.cost+' — المخزون '+d.stock:'لم يتم العثور على المنتج'},160)}</script>{% endblock %}
+{% extends "base.html" %}
+{% block page_title %}فاتورة شراء جديدة{% endblock %}
+{% block page_subtitle %}فواتير المشتريات › فاتورة شراء جديدة{% endblock %}
+{% block c %}
+
+<form method="post" id="purchaseForm">
+<section class="panel rowaa-purchase-top">
+  <h2>تفاصيل الفاتورة</h2>
+  <div class="form-grid">
+    <div class="field span2">
+      <label>المورد *</label>
+      <div class="inline-add">
+        <select name="supplier_id" required>
+          <option value="">ابحث عن مورد أو اختر المورد</option>
+          {% for s in suppliers %}<option value="{{s.id}}">{{s.name}}</option>{% endfor %}
+        </select>
+        <a class="btn ghost" href="/suppliers" target="_blank">+ مورد جديد</a>
+      </div>
+    </div>
+    <div class="field"><label>رقم فاتورة المورد</label><input name="invoice_no"></div>
+    <div class="field"><label>تاريخ الفاتورة</label><input name="supplier_invoice_date" type="date"></div>
+    <div class="field"><label>تاريخ الاستحقاق</label><input name="due_date" type="date"></div>
+    <div class="field"><label>الموقع</label><select name="location"><option>الفرع الرئيسي</option></select></div>
+    <div class="field"><label>حالة الفاتورة</label><select name="status"><option>مسودة</option><option selected>معتمدة</option></select></div>
+    <div class="field"><label>حالة الدفع</label><select name="payment_status"><option>مدفوع</option><option>غير مدفوع</option></select></div>
+    <div class="field"><label>طريقة الدفع</label><select name="payment_method"><option>نقدي</option><option>مدى</option><option>تحويل</option><option>آجل</option></select></div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>المنتجات</h2>
+      <p>أدخل اسم المنتج أو SKU أو امسح الباركود</p>
+    </div>
+    <div class="toolbar no-margin">
+      <a class="btn ghost" href="/products/new" target="_blank">+ منتج جديد</a>
+      <button type="button" class="ghost">استيراد المنتجات</button>
+    </div>
+  </div>
+
+  <div class="purchase-search">
+    <input id="purchaseSearch" placeholder="ابحث باسم المنتج أو SKU" autocomplete="off" autofocus>
+    <button type="button" id="addLine" class="primary">+</button>
+  </div>
+
+  <div class="table-wrap rowaa-purchase-table">
+    <table>
+      <thead>
+        <tr>
+          <th>اسم المنتج / SKU</th>
+          <th>الكمية</th>
+          <th>سعر الشراء</th>
+          <th>الخصم</th>
+          <th>نوع الضريبة</th>
+          <th>الإجمالي شامل الضريبة</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="purchaseBody"></tbody>
+    </table>
+  </div>
+
+  <div class="purchase-empty" id="purchaseEmpty">
+    <div class="empty-icon">◇</div>
+    <h3>لا توجد منتجات</h3>
+    <p>أضف المنتجات باستخدام خانة البحث بالأعلى.</p>
+  </div>
+</section>
+
+<section class="panel rowaa-totals">
+  <div><span>الإجمالي قبل الضريبة</span><b><span id="subTotal">0.00</span> ر.س</b></div>
+  <div><span>الخصم</span><b><span id="discountTotal">0.00</span> ر.س</b></div>
+  <div><span>ضريبة القيمة المضافة</span><b><span id="vatTotal">0.00</span> ر.س</b></div>
+  <div class="grand"><span>الإجمالي</span><b><span id="grandTotal">0.00</span> ر.س</b></div>
+</section>
+
+<section class="panel">
+  <h2>المرفقات</h2>
+  <div class="attachment-drop">
+    <div class="attach-icon">📎</div>
+    <b>قم بسحب وإفلات الملفات هنا</b>
+    <span>أو</span>
+    <label class="btn bundle-add">
+      استعرض الملفات
+      <input type="file" id="attachmentFile" hidden>
+    </label>
+    <small>حجم الملف يجب ألا يتجاوز 20 ميجابايت</small>
+  </div>
+  <input type="hidden" name="attachment" id="attachmentName">
+</section>
+
+<div class="sticky-actions">
+  <a class="btn ghost" href="/purchases">حفظ كمسودة</a>
+  <button class="primary">حفظ</button>
+</div>
+</form>
+
+<template id="purchaseRowTemplate">
+<tr>
+  <td>
+    <b class="p-name"></b>
+    <small class="p-sku"></small>
+    <input type="hidden" name="product_code[]">
+  </td>
+  <td><input class="line-qty compact-input" name="qty[]" type="number" step="0.01" min="0.01" value="1"></td>
+  <td><input class="line-cost compact-input" name="unit_cost[]" type="number" step="0.01" min="0" value="0"></td>
+  <td><input class="line-discount compact-input" name="discount[]" type="number" step="0.01" min="0" value="0"></td>
+  <td>
+    <select class="line-vat" name="vat_rate[]">
+      <option value="15" selected>ضريبة القيمة المضافة 15%</option>
+      <option value="0">معفى / 0%</option>
+    </select>
+  </td>
+  <td><b class="line-total">0.00</b></td>
+  <td><button type="button" class="line-delete danger-light">×</button></td>
+</tr>
+</template>
+
+<script>
+const search=document.getElementById('purchaseSearch');
+const body=document.getElementById('purchaseBody');
+const empty=document.getElementById('purchaseEmpty');
+
+async function lookup(code){
+  const r=await fetch('/api/product-by-code?code='+encodeURIComponent(code));
+  if(!r.ok) return null;
+  return await r.json();
+}
+
+async function addProduct(){
+  const code=search.value.trim();
+  if(!code) return;
+  const d=await lookup(code);
+  if(!d || !d.ok){ alert('لم يتم العثور على المنتج أو SKU'); return; }
+  const node=document.getElementById('purchaseRowTemplate').content.cloneNode(true);
+  const tr=node.querySelector('tr');
+  tr.querySelector('.p-name').textContent=d.name;
+  tr.querySelector('.p-sku').textContent=code;
+  tr.querySelector('input[name="product_code[]"]').value=code;
+  tr.querySelector('.line-cost').value=d.cost || 0;
+  body.appendChild(node);
+  search.value='';
+  refreshTotals();
+  search.focus();
+}
+
+function refreshTotals(){
+  let subtotal=0,discount=0,vat=0,grand=0;
+  [...body.querySelectorAll('tr')].forEach(tr=>{
+    const q=parseFloat(tr.querySelector('.line-qty').value||0);
+    const c=parseFloat(tr.querySelector('.line-cost').value||0);
+    const d=parseFloat(tr.querySelector('.line-discount').value||0);
+    const vr=parseFloat(tr.querySelector('.line-vat').value||0);
+    const raw=q*c;
+    const taxable=Math.max(0,raw-d);
+    const tx=taxable*(vr/100);
+    const total=taxable+tx;
+    tr.querySelector('.line-total').textContent=total.toFixed(2);
+    subtotal+=raw; discount+=d; vat+=tx; grand+=total;
+  });
+  document.getElementById('subTotal').textContent=subtotal.toFixed(2);
+  document.getElementById('discountTotal').textContent=discount.toFixed(2);
+  document.getElementById('vatTotal').textContent=vat.toFixed(2);
+  document.getElementById('grandTotal').textContent=grand.toFixed(2);
+  empty.style.display=body.children.length?'none':'block';
+}
+document.getElementById('addLine').onclick=addProduct;
+search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addProduct();}});
+body.addEventListener('input',refreshTotals);
+body.addEventListener('change',refreshTotals);
+body.addEventListener('click',e=>{
+  const b=e.target.closest('.line-delete');
+  if(b){b.closest('tr').remove();refreshTotals();}
+});
+document.getElementById('attachmentFile').addEventListener('change',e=>{
+  document.getElementById('attachmentName').value=e.target.files[0]?.name||'';
+});
+refreshTotals();
+</script>
+{% endblock %}
