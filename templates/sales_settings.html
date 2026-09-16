@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block page_title %}إعدادات البيع{% endblock %}{% block page_subtitle %}خيارات نقطة البيع والفواتير{% endblock %}{% block c %}
+<form method="post" class="panel settings-list">
+{% set options=[('allow_sale','السماح بالبيع'),('show_price','عرض السعر'),('allow_below_cost','السماح بالبيع بسعر أقل من التكلفة'),('simple_tax_invoice','فاتورة ضريبية مبسطة'),('track_stock','تتبع كميات المنتج'),('allow_notes','السماح بالملاحظات')] %}
+{% for k,l in options %}<label class="setting-row"><span><b>{{l}}</b><small>يمكن تشغيل أو إيقاف هذا الخيار</small></span><input type="checkbox" name="{{k}}" {% if vals[k]=='1' %}checked{% endif %}></label>{% endfor %}
+<button class="primary">حفظ</button></form>{% endblock %}

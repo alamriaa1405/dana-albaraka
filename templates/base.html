@@ -1,72 +1,60 @@
 
-<!doctype html>
-<html dir="rtl" lang="ar">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}تموينات دانة البركة{% endblock %}</title>
-  <meta name="theme-color" content="#062f35">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="دانة البركة">
-  <link rel="manifest" href="/static/manifest.webmanifest">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
+<!doctype html><html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}دانة البركة{% endblock %}</title>
+<meta name="theme-color" content="#0f363b">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head><body>
 {% if session.user %}
 <button class="mobile-menu" onclick="document.body.classList.toggle('menu-open')">☰</button>
 <aside class="sidebar">
-  <div class="brand">
-    <div class="brand-mark">د</div>
-    <div><strong>دانة البركة</strong><small>نظام التموينات</small></div>
-  </div>
-  <nav class="side-nav">
-    <a class="{{'active' if request.path=='/' else ''}}" href="/">⌂ <span>الرئيسية</span></a>
-    <a class="{{'active' if request.path.startswith('/pos') else ''}}" href="/pos">▣ <span>المبيعات والعملاء</span></a>
-    <a class="{{'active' if request.path.startswith('/products') else ''}}" href="/products">◇ <span>المنتجات والمخزون</span></a>
-    <a class="{{'active' if request.path.startswith('/purchase') else ''}}" href="/purchase">▤ <span>المشتريات والموردون</span></a>
-    <a class="{{'active' if request.path.startswith('/expenses') else ''}}" href="/expenses">◫ <span>المحاسبة</span></a>
-    <a class="{{'active' if request.path.startswith('/reports') else ''}}" href="/reports">▦ <span>التقارير</span></a>
-    <a class="{{'active' if request.path.startswith('/contacts') else ''}}" href="/contacts">◎ <span>العملاء والموردون</span></a>
-    {% if session.role=='مشرف' %}
-    <a class="{{'active' if request.path.startswith('/users') else ''}}" href="/users">⚙ <span>المستخدمون والإعدادات</span></a>
-    {% endif %}
-  </nav>
-  <div class="sidebar-foot">
-    <div class="user-chip">{{session.user}} — {{session.role}}</div>
-    <a href="/logout">تسجيل الخروج</a>
-  </div>
+<div class="brand"><div class="logo">د</div><div><b>دانة البركة</b><small>نظام التموينات</small></div></div>
+<nav class="tree">
+<a class="{{'active' if request.path=='/'}}" href="/">⌂ <span>الرئيسية</span></a>
+
+<details {% if request.path.startswith('/sales') or request.path.startswith('/pos') or request.path.startswith('/customers') or request.path.startswith('/customer-payments') or request.path.startswith('/invoice') %}open{% endif %}>
+<summary>▣ <span>المبيعات والعملاء</span></summary>
+<a href="/pos">نقاط البيع</a><a href="/sales/cashboxes">إدارة صناديق البيع</a><a href="/sales/digital-menu">المنيو الرقمي</a>
+<a href="/sales/invoices">فواتير المبيعات</a><a href="/sales/promotions">العروض الترويجية</a><a href="/sales/ecommerce">طلبات المتجر الإلكتروني</a>
+<a href="/customers">العملاء</a><a href="/customer-payments">مدفوعات العملاء</a><a href="/sales/settings">إعدادات البيع</a>
+</details>
+
+<details {% if request.path.startswith('/products') or request.path.startswith('/categories') or request.path.startswith('/inventory') or request.path.startswith('/menu-options') %}open{% endif %}>
+<summary>◇ <span>المنتجات والمخزون</span></summary>
+<a href="/products">المنتجات</a><a href="/categories">إدارة الفئات</a><a href="/menu-options">خيارات المنيو</a>
+<a href="/inventory/docs">السندات المخزنية</a><a href="/inventory/count">جرد مخزون</a><a href="/inventory/transfer">تحويل مخزون</a>
+</details>
+
+<details {% if request.path.startswith('/purchase') or request.path.startswith('/supplier') or request.path.startswith('/suppliers') %}open{% endif %}>
+<summary>▤ <span>المشتريات والموردين</span></summary>
+<a href="/purchases">فواتير المشتريات</a><a href="/purchase-returns">فواتير مردود المشتريات</a><a href="/suppliers">الموردين</a><a href="/supplier-payments">مدفوعات الموردين</a>
+</details>
+
+<details {% if request.path.startswith('/expenses') or request.path.startswith('/fixed-assets') or request.path.startswith('/journal') or request.path.startswith('/chart-of-accounts') %}open{% endif %}>
+<summary>◫ <span>المحاسبة</span></summary>
+<a href="/expenses">المصروفات</a><a href="/fixed-assets">الأصول الثابتة</a><a href="/journal-entries">القيود اليومية</a><a href="/chart-of-accounts">شجرة الحسابات</a>
+</details>
+
+<details><summary>▦ <span>التطبيقات</span></summary><a href="#">التطبيقات المتصلة</a></details>
+<a href="/reports">▥ <span>التقارير</span></a>
+
+<details {% if request.path.startswith('/settings') or request.path.startswith('/users') %}open{% endif %}>
+<summary>⚙ <span>الإعدادات</span></summary>
+<a href="/settings/company">معلومات الشركة</a><a href="/users">المستخدمين</a><a href="/settings/roles">الأدوار والصلاحيات</a>
+<a href="/settings/locations">المواقع</a><a href="/settings/taxes">الضرائب</a><a href="/settings/payments">طرق الدفع</a>
+<a href="/settings/einvoice">الفواتير الإلكترونية</a><a href="/settings/import-docs">سندات الاستيراد</a><a href="/settings/finance">المالية</a>
+</details>
+</nav>
+<div class="sidebar-bottom"><div class="who">{{session.user}} — {{session.role}}</div><a href="/logout">تسجيل الخروج</a></div>
 </aside>
 
-<div class="app-shell">
-  <header class="topbar">
-    <div>
-      <h1>{% block page_title %}لوحة التحكم{% endblock %}</h1>
-      <p>{% block page_subtitle %}نظرة عامة{% endblock %}</p>
-    </div>
-    <div class="top-actions">
-      <span class="pill">● متصل</span>
-      <span class="date-now" id="clock"></span>
-    </div>
-  </header>
-  <main>
-    {% with m=get_flashed_messages() %}
-      {% if m %}<div class="flash">{{m|join(' — ')}}</div>{% endif %}
-    {% endwith %}
-    {% block c %}{% endblock %}
-  </main>
+<div class="shell">
+<header class="topbar"><div><h1>{% block page_title %}لوحة التحكم{% endblock %}</h1><p>{% block page_subtitle %}نظرة عامة{% endblock %}</p></div><div class="top-tools"><span>مساعدة واكتشف</span><span>🔔</span></div></header>
+<main>{% with m=get_flashed_messages() %}{% if m %}<div class="flash">{{m|join(' — ')}}</div>{% endif %}{% endwith %}{% block c %}{% endblock %}</main>
 </div>
-<script>
-(function(){
-  const e=document.getElementById('clock');
-  if(e){
-    const d=new Date();
-    e.textContent=d.toLocaleDateString('ar-SA')+'  '+d.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
-  }
-})();
-</script>
 {% else %}
 <main class="login-wrap">{% block login_c %}{% endblock %}</main>
 {% endif %}
-</body>
-</html>
+</body></html>

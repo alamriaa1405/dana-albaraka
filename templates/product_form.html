@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block page_title %}{{'تحرير المنتج' if p else 'منتج جديد'}}{% endblock %}{% block page_subtitle %}المنتجات › {{'تحرير' if p else 'منتج جديد'}}{% endblock %}{% block c %}
+<form method="post" class="product-form">
+<section class="panel"><h2>نوع المنتج</h2><div class="product-types"><label class="choice active"><input type="radio" checked> منتج من نوع واحد</label><label class="choice"><input type="radio"> منتج متعدد الأنواع</label><label class="choice"><input type="radio"> منتج مجمع</label></div></section>
+<section class="panel"><h2>المعلومات الرئيسية</h2><div class="form-grid">
+<div class="field span2"><label>اسم المنتج *</label><input name="name" value="{{p.name if p else ''}}" required></div>
+<div class="field"><label>SKU</label><input name="sku" value="{{p.sku if p else ''}}"></div>
+<div class="field"><label>باركود الحبة</label><input name="barcode_piece" value="{{p.barcode_piece if p else ''}}"></div>
+<div class="field"><label>باركود الحزمة</label><input name="barcode_pack" value="{{p.barcode_pack if p else ''}}"></div>
+<div class="field"><label>كمية الحزمة</label><input name="pack_qty" type="number" value="{{p.pack_qty if p else 1}}"></div>
+<div class="field"><label>باركود الكرتون</label><input name="barcode_carton" value="{{p.barcode_carton if p else ''}}"></div>
+<div class="field"><label>كمية الكرتون</label><input name="carton_qty" type="number" value="{{p.carton_qty if p else 1}}"></div>
+<div class="field span2"><label>الوصف</label><textarea name="description">{{p.description if p else ''}}</textarea></div>
+</div><div class="switches"><label><input type="checkbox" name="sellable" {% if not p or p.sellable %}checked{% endif %}> قابل للبيع</label><label><input type="checkbox" name="purchasable" {% if not p or p.purchasable %}checked{% endif %}> قابل للشراء</label></div></section>
+<section class="panel"><h2>المصدر والتتبع</h2><div class="switches"><label><input type="checkbox" name="track_stock" {% if not p or p.track_stock %}checked{% endif %}> تتبع كميات هذا المنتج</label><label><input type="checkbox" name="weighted" {% if p and p.weighted %}checked{% endif %}> منتج موزون</label></div></section>
+<section class="panel"><h2>الكميات والأسعار</h2><div class="form-grid">
+<div class="field"><label>الكمية الأولية</label><input name="stock" type="number" step="0.01" value="{{p.stock if p else 0}}"></div>
+<div class="field"><label>التكلفة الأولية</label><input name="cost" type="number" step="0.01" value="{{p.cost if p else 0}}"></div>
+<div class="field"><label>سعر التجزئة</label><input name="sale_price" type="number" step="0.01" value="{{p.sale_price if p else 0}}"></div>
+<div class="field"><label>سعر الجملة</label><input name="wholesale_price" type="number" step="0.01" value="{{p.wholesale_price if p else 0}}"></div>
+<div class="field"><label>الحد الأدنى للكمية</label><input name="min_stock" type="number" step="0.01" value="{{p.min_stock if p else 0}}"></div>
+<div class="field"><label>تاريخ الانتهاء</label><input name="expiry" type="date" value="{{p.expiry if p else ''}}"></div>
+<div class="field"><label>الوحدة</label><select name="unit"><option>حبة</option><option>كرتون</option><option>كجم</option></select></div>
+</div></section>
+<section class="panel"><h2>التصنيفات</h2><div class="form-grid">
+<div class="field"><label>الفئة</label><input name="category" value="{{p.category if p else ''}}" list="cats"><datalist id="cats">{% for x in categories %}<option>{{x.name}}</option>{% endfor %}</datalist></div>
+<div class="field"><label>المورد</label><select name="supplier_id"><option value="">—</option>{% for x in suppliers %}<option value="{{x.id}}" {% if p and p.supplier_id==x.id %}selected{% endif %}>{{x.name}}</option>{% endfor %}</select></div>
+<div class="field"><label>العلامة التجارية</label><input name="brand" value="{{p.brand if p else ''}}"></div>
+</div></section>
+<section class="panel"><h2>الصور والحقول المخصصة</h2><div class="dropzone">إضافة جميع الصور — JPEG / PNG / PDF</div><button type="button" class="ghost">+ أضف حقل مخصص</button></section>
+<div class="sticky-actions"><a class="btn ghost" href="/products">إلغاء</a><button class="primary">حفظ</button></div>
+</form>{% endblock %}
