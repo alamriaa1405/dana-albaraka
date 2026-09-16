@@ -1,0 +1,19 @@
+
+{% extends "base.html" %}
+{% block page_title %}المحاسبة والمصروفات{% endblock %}
+{% block page_subtitle %}تسجيل المصروفات اليومية{% endblock %}
+{% block c %}
+<section class="panel">
+  <form method="post" class="form-grid">
+    <input name="title" placeholder="نوع المصروف: كهرباء، رواتب، صيانة..." required>
+    <input name="amount" type="number" step="0.01" placeholder="المبلغ" required>
+    <input name="note" placeholder="ملاحظة">
+    <button class="primary">إضافة المصروف</button>
+  </form>
+</section>
+<section class="panel">
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>المصروف</th><th>المبلغ</th><th>ملاحظة</th></tr>
+{% for x in rows %}<tr><td>{{x.created_at[:16]}}</td><td>{{x.title}}</td><td>{{x.amount}} ر.س</td><td>{{x.note or '-'}}</td></tr>{% endfor %}
+</table></div>
+</section>
+{% endblock %}

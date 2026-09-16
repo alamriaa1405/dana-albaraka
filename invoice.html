@@ -1,0 +1,24 @@
+
+{% extends "base.html" %}
+{% block page_title %}فاتورة بيع #{{sale.id}}{% endblock %}
+{% block page_subtitle %}فاتورة مقفلة بعد الإتمام{% endblock %}
+{% block c %}
+<section class="panel invoice">
+<div class="invoice-head">
+  <div><h2>تموينات دانة البركة</h2><p>فاتورة بيع رقم {{sale.id}}</p></div>
+  <div><b>{{sale.created_at[:16]}}</b><br><span>{{sale.payment_method}}</span></div>
+</div>
+<p>العميل: {{sale.customer_name or 'نقدي'}} {% if sale.customer_phone %}— {{sale.customer_phone}}{% endif %}</p>
+<div class="table-wrap"><table><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
+{% for x in items %}<tr><td>{{x.name}}</td><td>{{x.qty}}</td><td>{{x.price}}</td><td>{{x.subtotal}}</td></tr>{% endfor %}
+</table></div>
+<div class="invoice-total">الإجمالي: {{"%.2f"|format(sale.total)}} ر.س</div>
+<div class="invoice-actions">
+  <button onclick="window.print()">طباعة</button>
+  {% if session.role=='مشرف' and sale.status!='مرتجع' %}
+  <form method="post" action="/return/{{sale.id}}"><button class="danger">تسجيل مرتجع كامل</button></form>
+  {% endif %}
+</div>
+<p class="muted">الحالة: {{sale.status}} — لا يمكن تعديل الفاتورة بعد إتمام البيع.</p>
+</section>
+{% endblock %}

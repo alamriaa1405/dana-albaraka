@@ -1,0 +1,52 @@
+
+{% extends "base.html" %}
+{% block page_title %}المشتريات والموردون{% endblock %}
+{% block page_subtitle %}إدخال المنتج من خانة واحدة بالكود أو الباركود{% endblock %}
+{% block c %}
+<section class="panel">
+  <div class="panel-head"><div><h2>فاتورة شراء</h2><p>ضع المؤشر في خانة الكود وامسح الباركود مباشرة</p></div></div>
+  <form method="post" class="form-grid" id="purchaseForm">
+    <div class="field wide">
+      <label>كود المنتج / الباركود</label>
+      <input id="product_code" name="product_code" autocomplete="off" autofocus placeholder="اكتب رقم الكود أو امسح الباركود" required>
+      <small id="productHint" class="muted">سيظهر اسم المنتج تلقائيًا</small>
+    </div>
+    <select name="supplier_id">
+      <option value="">المورد (اختياري)</option>
+      {% for s in suppliers %}<option value="{{s.id}}">{{s.name}}</option>{% endfor %}
+    </select>
+    <input name="qty" type="number" step="0.01" value="1" placeholder="الكمية" required>
+    <input name="unit_cost" type="number" step="0.01" placeholder="سعر الشراء" required>
+    <input name="attachment" placeholder="مرفق الفاتورة (اختياري)">
+    <button class="primary">تسجيل الشراء</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><h2>آخر المشتريات</h2></div></div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>التاريخ</th><th>المنتج</th><th>المورد</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
+    {% for x in recent %}
+    <tr><td>{{x.created_at[:16]}}</td><td>{{x.product_name}}</td><td>{{x.supplier_name or '-'}}</td><td>{{x.qty}}</td><td>{{x.unit_cost}}</td><td>{{x.total}}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+</section>
+
+<script>
+const code=document.getElementById('product_code'), hint=document.getElementById('productHint');
+let t;
+code.addEventListener('input',()=>{
+  clearTimeout(t);
+  t=setTimeout(async()=>{
+    if(!code.value.trim()){hint.textContent='سيظهر اسم المنتج تلقائيًا'; return;}
+    try{
+      const r=await fetch('/api/product-by-code?code='+encodeURIComponent(code.value.trim()));
+      const d=await r.json();
+      hint.textContent=d.ok ? 'المنتج: '+d.name+' — المخزون: '+d.stock : 'لم يتم العثور على المنتج';
+    }catch(e){hint.textContent='لم يتم العثور على المنتج';}
+  },180);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+
+{% extends "base.html" %}
+{% block page_title %}تحرير المنتج{% endblock %}
+{% block page_subtitle %}تعديل بيانات المنتج والباركود والأسعار{% endblock %}
+{% block c %}
+<section class="panel narrow">
+<form method="post" class="form-grid">
+  <input name="name" value="{{p.name}}" required>
+  <input name="category" value="{{p.category or ''}}" placeholder="التصنيف">
+  <select name="unit"><option {{'selected' if p.unit=='حبة'}}>حبة</option><option {{'selected' if p.unit=='كرتون'}}>كرتون</option><option {{'selected' if p.unit=='كجم'}}>كجم</option></select>
+  <input name="barcode_piece" value="{{p.barcode_piece or ''}}" placeholder="باركود الحبة">
+  <input name="barcode_pack" value="{{p.barcode_pack or ''}}" placeholder="باركود الحزمة">
+  <input name="pack_qty" value="{{p.pack_qty}}" type="number" min="1">
+  <input name="barcode_carton" value="{{p.barcode_carton or ''}}" placeholder="باركود الكرتون">
+  <input name="carton_qty" value="{{p.carton_qty}}" type="number" min="1">
+  <input name="cost" value="{{p.cost}}" type="number" step="0.01">
+  <input name="sale_price" value="{{p.sale_price}}" type="number" step="0.01">
+  <input name="stock" value="{{p.stock}}" type="number" step="0.01">
+  <input name="min_stock" value="{{p.min_stock}}" type="number" step="0.01">
+  <input name="expiry" value="{{p.expiry or ''}}" type="date">
+  <button class="primary">حفظ التعديلات</button>
+  <a class="btn secondary" href="/products">إلغاء</a>
+</form>
+</section>
+{% endblock %}

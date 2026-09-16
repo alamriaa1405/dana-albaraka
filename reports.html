@@ -1,0 +1,20 @@
+
+{% extends "base.html" %}
+{% block page_title %}التقارير{% endblock %}
+{% block page_subtitle %}تقارير المبيعات والمنتجات{% endblock %}
+{% block c %}
+<div class="dashboard-grid">
+<section class="panel">
+<h2>المبيعات اليومية</h2>
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>عدد الفواتير</th><th>الإجمالي</th></tr>
+{% for x in sales %}<tr><td>{{x.d}}</td><td>{{x.n}}</td><td>{{"%.2f"|format(x.total or 0)}} ر.س</td></tr>{% endfor %}
+</table></div>
+</section>
+<section class="panel">
+<h2>الأكثر مبيعًا</h2>
+<div class="table-wrap"><table><tr><th>المنتج</th><th>الكمية</th><th>القيمة</th></tr>
+{% for x in top_products %}<tr><td>{{x.name}}</td><td>{{x.qty}}</td><td>{{"%.2f"|format(x.total)}} ر.س</td></tr>{% endfor %}
+</table></div>
+</section>
+</div>
+{% endblock %}

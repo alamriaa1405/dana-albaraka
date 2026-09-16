@@ -1,0 +1,72 @@
+
+<!doctype html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}تموينات دانة البركة{% endblock %}</title>
+  <meta name="theme-color" content="#062f35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="دانة البركة">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+{% if session.user %}
+<button class="mobile-menu" onclick="document.body.classList.toggle('menu-open')">☰</button>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">د</div>
+    <div><strong>دانة البركة</strong><small>نظام التموينات</small></div>
+  </div>
+  <nav class="side-nav">
+    <a class="{{'active' if request.path=='/' else ''}}" href="/">⌂ <span>الرئيسية</span></a>
+    <a class="{{'active' if request.path.startswith('/pos') else ''}}" href="/pos">▣ <span>المبيعات والعملاء</span></a>
+    <a class="{{'active' if request.path.startswith('/products') else ''}}" href="/products">◇ <span>المنتجات والمخزون</span></a>
+    <a class="{{'active' if request.path.startswith('/purchase') else ''}}" href="/purchase">▤ <span>المشتريات والموردون</span></a>
+    <a class="{{'active' if request.path.startswith('/expenses') else ''}}" href="/expenses">◫ <span>المحاسبة</span></a>
+    <a class="{{'active' if request.path.startswith('/reports') else ''}}" href="/reports">▦ <span>التقارير</span></a>
+    <a class="{{'active' if request.path.startswith('/contacts') else ''}}" href="/contacts">◎ <span>العملاء والموردون</span></a>
+    {% if session.role=='مشرف' %}
+    <a class="{{'active' if request.path.startswith('/users') else ''}}" href="/users">⚙ <span>المستخدمون والإعدادات</span></a>
+    {% endif %}
+  </nav>
+  <div class="sidebar-foot">
+    <div class="user-chip">{{session.user}} — {{session.role}}</div>
+    <a href="/logout">تسجيل الخروج</a>
+  </div>
+</aside>
+
+<div class="app-shell">
+  <header class="topbar">
+    <div>
+      <h1>{% block page_title %}لوحة التحكم{% endblock %}</h1>
+      <p>{% block page_subtitle %}نظرة عامة{% endblock %}</p>
+    </div>
+    <div class="top-actions">
+      <span class="pill">● متصل</span>
+      <span class="date-now" id="clock"></span>
+    </div>
+  </header>
+  <main>
+    {% with m=get_flashed_messages() %}
+      {% if m %}<div class="flash">{{m|join(' — ')}}</div>{% endif %}
+    {% endwith %}
+    {% block c %}{% endblock %}
+  </main>
+</div>
+<script>
+(function(){
+  const e=document.getElementById('clock');
+  if(e){
+    const d=new Date();
+    e.textContent=d.toLocaleDateString('ar-SA')+'  '+d.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+  }
+})();
+</script>
+{% else %}
+<main class="login-wrap">{% block login_c %}{% endblock %}</main>
+{% endif %}
+</body>
+</html>

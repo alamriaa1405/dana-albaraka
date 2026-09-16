@@ -1,0 +1,8 @@
+{
+  "name": "تموينات دانة البركة",
+  "short_name": "دانة البركة",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f7",
+  "theme_color": "#062f35"
+}

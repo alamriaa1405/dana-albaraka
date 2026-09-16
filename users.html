@@ -1,0 +1,29 @@
+
+{% extends "base.html" %}
+{% block page_title %}المستخدمون والإعدادات{% endblock %}
+{% block page_subtitle %}إنشاء المستخدمين وتحديد الصلاحيات{% endblock %}
+{% block c %}
+<section class="panel">
+<form method="post" class="form-grid">
+  <input name="username" placeholder="اسم المستخدم" required>
+  <input name="password" type="password" placeholder="كلمة المرور" required>
+  <select name="role"><option>موظف</option><option>مشرف</option></select>
+  <label><input type="checkbox" name="permissions" value="بيع"> بيع</label>
+  <label><input type="checkbox" name="permissions" value="مخزون"> مخزون</label>
+  <label><input type="checkbox" name="permissions" value="مشتريات"> مشتريات</label>
+  <button class="primary">إضافة مستخدم</button>
+</form>
+</section>
+<section class="panel">
+<h2>المستخدمون</h2>
+<div class="table-wrap"><table><tr><th>المستخدم</th><th>الدور</th><th>الصلاحيات</th><th>الحالة</th></tr>
+{% for x in rows %}<tr><td>{{x.username}}</td><td>{{x.role}}</td><td>{{x.permissions}}</td><td>{{'نشط' if x.active else 'موقوف'}}</td></tr>{% endfor %}
+</table></div>
+</section>
+<section class="panel">
+<h2>سجل العمليات</h2>
+<div class="table-wrap"><table><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>التفاصيل</th></tr>
+{% for x in logs %}<tr><td>{{x.created_at}}</td><td>{{x.user}}</td><td>{{x.action}}</td><td>{{x.details}}</td></tr>{% endfor %}
+</table></div>
+</section>
+{% endblock %}

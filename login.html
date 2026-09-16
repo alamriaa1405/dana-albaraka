@@ -1,0 +1,16 @@
+
+{% extends "base.html" %}
+{% block login_c %}
+<div class="login-card">
+  <div class="login-logo">د</div>
+  <h1>تموينات دانة البركة</h1>
+  <p>تسجيل الدخول إلى النظام</p>
+  {% with m=get_flashed_messages() %}{% if m %}<div class="flash">{{m|join(' — ')}}</div>{% endif %}{% endwith %}
+  <form method="post" class="stack">
+    <input name="username" placeholder="اسم المستخدم" required autofocus>
+    <input name="password" type="password" placeholder="كلمة المرور" required>
+    <button class="primary big">دخول</button>
+  </form>
+  <small class="muted">الدخول الأول: admin / admin123</small>
+</div>
+{% endblock %}
