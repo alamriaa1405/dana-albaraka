@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: dana-albaraka-pos
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: dana-data
+      mountPath: /var/data
+      sizeGB: 1
