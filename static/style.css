@@ -27,3 +27,5 @@ input,select,textarea,button,.btn{font:inherit;border:1px solid #ccd7d9;border-r
 .pack-delete{position:absolute;left:10px;top:10px;border:0;background:transparent;color:#b94747;padding:6px}
 .field small,.sku-row+small{color:var(--muted);font-size:12px}
 @media(max-width:780px){.sku-row{flex-direction:column}.sku-generate{width:100%}}
+
+.link-btn{border:0;background:transparent;color:var(--brand);padding:4px 6px;cursor:pointer}.barcode-print{white-space:nowrap}
