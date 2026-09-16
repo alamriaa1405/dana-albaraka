@@ -52,6 +52,20 @@ def init_db():
       purchasable INTEGER DEFAULT 1,
       description TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS product_packs(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      pack_size REAL NOT NULL DEFAULT 1,
+      sku TEXT UNIQUE NOT NULL,
+      sale_price REAL DEFAULT 0,
+      wholesale_price REAL DEFAULT 0,
+      cost REAL DEFAULT 0,
+      sellable INTEGER DEFAULT 1,
+      purchasable INTEGER DEFAULT 1,
+      FOREIGN KEY(product_id) REFERENCES products(id)
+    );
     CREATE TABLE IF NOT EXISTS categories(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL
@@ -266,20 +280,56 @@ def audit(action, details=""):
 def allowed(p):
     return session.get("role")=="مشرف" or session.get("permissions")=="الكل" or p in (session.get("permissions") or "").split(",")
 
+def generate_sku(c):
+    # رقم رقمي مناسب للإدخال اليدوي أو القراءة بقارئ الباركود.
+    # يستمر بالتوليد حتى يجد رقماً غير مستخدم لا في المنتجات ولا الحزم.
+    import random
+    while True:
+        code = str(random.randint(100000000000, 999999999999))
+        exists = c.execute("SELECT 1 FROM products WHERE sku=? LIMIT 1",(code,)).fetchone()
+        if not exists:
+            exists = c.execute("SELECT 1 FROM product_packs WHERE sku=? LIMIT 1",(code,)).fetchone()
+        if not exists:
+            return code
+
 def find_product(c, code):
     code=(code or "").strip()
     if not code: return None
-    return c.execute("""
-      SELECT *,
-      CASE WHEN CAST(id AS TEXT)=? THEN 1
-           WHEN sku=? THEN 1
-           WHEN barcode_piece=? THEN 1
-           WHEN barcode_pack=? THEN pack_qty
-           WHEN barcode_carton=? THEN carton_qty ELSE 1 END mult
-      FROM products
-      WHERE CAST(id AS TEXT)=? OR sku=? OR barcode_piece=? OR barcode_pack=? OR barcode_carton=?
+
+    p = c.execute("SELECT * FROM products WHERE sku=? OR CAST(id AS TEXT)=? LIMIT 1",(code,code)).fetchone()
+    if p:
+        d=dict(p)
+        d["mult"]=1
+        d["lookup_sku"]=p["sku"]
+        d["pack_name"]=None
+        return d
+
+    pk = c.execute("""
+      SELECT pk.*, p.name product_name, p.stock, p.track_stock,
+             p.cost base_cost, p.sale_price base_sale_price,
+             p.wholesale_price base_wholesale_price, p.id base_product_id
+      FROM product_packs pk
+      JOIN products p ON p.id=pk.product_id
+      WHERE pk.sku=?
       LIMIT 1
-    """,(code,code,code,code,code,code,code,code,code,code)).fetchone()
+    """,(code,)).fetchone()
+    if pk:
+        # نحول سعر الحزمة إلى سعر لكل وحدة داخل الحزمة حتى تبقى
+        # معادلات المخزون القديمة صحيحة مع احتساب pack_size كمضاعف.
+        size=float(pk["pack_size"] or 1)
+        return {
+            "id": pk["base_product_id"],
+            "name": pk["product_name"] + " - " + pk["name"],
+            "stock": pk["stock"],
+            "track_stock": pk["track_stock"],
+            "cost": (float(pk["cost"] or 0)/size) if float(pk["cost"] or 0)>0 else pk["base_cost"],
+            "sale_price": (float(pk["sale_price"] or 0)/size) if float(pk["sale_price"] or 0)>0 else pk["base_sale_price"],
+            "wholesale_price": (float(pk["wholesale_price"] or 0)/size) if float(pk["wholesale_price"] or 0)>0 else pk["base_wholesale_price"],
+            "mult": size,
+            "lookup_sku": pk["sku"],
+            "pack_name": pk["name"],
+        }
+    return None
 
 @app.before_request
 def auth():
@@ -316,6 +366,14 @@ def dashboard():
     return render_template("dashboard.html",sales_today=sales_today,sale_count=sale_count,gross=gross,net=net,
                            stock_value=stock_value,collected=collected,recent=recent,
                            chart_labels=[x["d"] for x in days],chart_values=[x["total"] for x in days])
+
+
+@app.route("/api/generate-sku")
+def api_generate_sku():
+    c=db()
+    code=generate_sku(c)
+    c.close()
+    return jsonify({"ok":True,"sku":code})
 
 @app.route("/api/product-by-code")
 def api_product():
@@ -441,37 +499,79 @@ def product_new():
     c=db(); cats=c.execute("SELECT * FROM categories ORDER BY name").fetchall(); sups=c.execute("SELECT * FROM suppliers ORDER BY name").fetchall()
     if request.method=="POST":
         f=request.form
+        sku=(f.get("sku") or "").strip() or generate_sku(c)
         try:
-            c.execute("""INSERT INTO products(name,sku,category,brand,supplier_id,unit,barcode_piece,barcode_pack,pack_qty,barcode_carton,carton_qty,
+            cur=c.execute("""INSERT INTO products(name,sku,category,brand,supplier_id,unit,
                        cost,sale_price,wholesale_price,stock,min_stock,expiry,track_stock,weighted,sellable,purchasable,description)
-                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                      (f["name"],f.get("sku"),f.get("category"),f.get("brand"),f.get("supplier_id") or None,f.get("unit") or "حبة",
-                       f.get("barcode_piece") or None,f.get("barcode_pack") or None,int(f.get("pack_qty") or 1),f.get("barcode_carton") or None,
-                       int(f.get("carton_qty") or 1),float(f.get("cost") or 0),float(f.get("sale_price") or 0),float(f.get("wholesale_price") or 0),
+                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                      (f["name"],sku,f.get("category"),f.get("brand"),f.get("supplier_id") or None,f.get("unit") or "حبة",
+                       float(f.get("cost") or 0),float(f.get("sale_price") or 0),float(f.get("wholesale_price") or 0),
                        float(f.get("stock") or 0),float(f.get("min_stock") or 0),f.get("expiry") or None,
-                       1 if f.get("track_stock") else 0,1 if f.get("weighted") else 0,1 if f.get("sellable") else 0,1 if f.get("purchasable") else 0,
-                       f.get("description")))
+                       1 if f.get("track_stock") else 0,1 if f.get("weighted") else 0,
+                       1 if f.get("sellable") else 0,1 if f.get("purchasable") else 0,f.get("description")))
+            pid=cur.lastrowid
+
+            pack_names=request.form.getlist("pack_name[]")
+            pack_sizes=request.form.getlist("pack_size[]")
+            pack_skus=request.form.getlist("pack_sku[]")
+            pack_sale_prices=request.form.getlist("pack_sale_price[]")
+            pack_wholesale_prices=request.form.getlist("pack_wholesale_price[]")
+            pack_costs=request.form.getlist("pack_cost[]")
+            for i, name in enumerate(pack_names):
+                name=(name or "").strip()
+                if not name: continue
+                psku=(pack_skus[i] if i < len(pack_skus) else "").strip() or generate_sku(c)
+                psize=float(pack_sizes[i] if i < len(pack_sizes) and pack_sizes[i] else 1)
+                psale=float(pack_sale_prices[i] if i < len(pack_sale_prices) and pack_sale_prices[i] else 0)
+                pwhole=float(pack_wholesale_prices[i] if i < len(pack_wholesale_prices) and pack_wholesale_prices[i] else 0)
+                pcost=float(pack_costs[i] if i < len(pack_costs) and pack_costs[i] else 0)
+                c.execute("""INSERT INTO product_packs(product_id,name,pack_size,sku,sale_price,wholesale_price,cost,sellable,purchasable)
+                             VALUES(?,?,?,?,?,?,?,?,?)""",
+                          (pid,name,psize,psku,psale,pwhole,pcost,1,1))
             c.commit(); audit("إضافة منتج",f["name"]); flash("تمت إضافة المنتج"); c.close(); return redirect("/products")
         except Exception as e:
+            c.rollback()
             flash("تعذر الحفظ: "+str(e))
-    c.close(); return render_template("product_form.html",p=None,categories=cats,suppliers=sups)
+    c.close(); return render_template("product_form.html",p=None,packs=[],categories=cats,suppliers=sups)
 
 @app.route("/products/edit/<int:pid>",methods=["GET","POST"])
 def product_edit(pid):
-    c=db(); p=c.execute("SELECT * FROM products WHERE id=?",(pid,)).fetchone(); cats=c.execute("SELECT * FROM categories ORDER BY name").fetchall(); sups=c.execute("SELECT * FROM suppliers ORDER BY name").fetchall()
+    c=db(); p=c.execute("SELECT * FROM products WHERE id=?",(pid,)).fetchone()
+    packs=c.execute("SELECT * FROM product_packs WHERE product_id=? ORDER BY id",(pid,)).fetchall()
+    cats=c.execute("SELECT * FROM categories ORDER BY name").fetchall(); sups=c.execute("SELECT * FROM suppliers ORDER BY name").fetchall()
     if not p: c.close(); flash("المنتج غير موجود"); return redirect("/products")
     if request.method=="POST":
         f=request.form
-        c.execute("""UPDATE products SET name=?,sku=?,category=?,brand=?,supplier_id=?,unit=?,barcode_piece=?,barcode_pack=?,pack_qty=?,barcode_carton=?,carton_qty=?,
-                     cost=?,sale_price=?,wholesale_price=?,stock=?,min_stock=?,expiry=?,track_stock=?,weighted=?,sellable=?,purchasable=?,description=? WHERE id=?""",
-                  (f["name"],f.get("sku"),f.get("category"),f.get("brand"),f.get("supplier_id") or None,f.get("unit") or "حبة",
-                   f.get("barcode_piece") or None,f.get("barcode_pack") or None,int(f.get("pack_qty") or 1),f.get("barcode_carton") or None,
-                   int(f.get("carton_qty") or 1),float(f.get("cost") or 0),float(f.get("sale_price") or 0),float(f.get("wholesale_price") or 0),
-                   float(f.get("stock") or 0),float(f.get("min_stock") or 0),f.get("expiry") or None,
-                   1 if f.get("track_stock") else 0,1 if f.get("weighted") else 0,1 if f.get("sellable") else 0,1 if f.get("purchasable") else 0,
-                   f.get("description"),pid))
-        c.commit(); c.close(); flash("تم تحديث المنتج"); return redirect("/products")
-    c.close(); return render_template("product_form.html",p=p,categories=cats,suppliers=sups)
+        sku=(f.get("sku") or "").strip() or p["sku"] or generate_sku(c)
+        try:
+            c.execute("""UPDATE products SET name=?,sku=?,category=?,brand=?,supplier_id=?,unit=?,
+                         cost=?,sale_price=?,wholesale_price=?,stock=?,min_stock=?,expiry=?,track_stock=?,weighted=?,sellable=?,purchasable=?,description=? WHERE id=?""",
+                      (f["name"],sku,f.get("category"),f.get("brand"),f.get("supplier_id") or None,f.get("unit") or "حبة",
+                       float(f.get("cost") or 0),float(f.get("sale_price") or 0),float(f.get("wholesale_price") or 0),
+                       float(f.get("stock") or 0),float(f.get("min_stock") or 0),f.get("expiry") or None,
+                       1 if f.get("track_stock") else 0,1 if f.get("weighted") else 0,
+                       1 if f.get("sellable") else 0,1 if f.get("purchasable") else 0,f.get("description"),pid))
+            c.execute("DELETE FROM product_packs WHERE product_id=?",(pid,))
+            pack_names=request.form.getlist("pack_name[]")
+            pack_sizes=request.form.getlist("pack_size[]")
+            pack_skus=request.form.getlist("pack_sku[]")
+            pack_sale_prices=request.form.getlist("pack_sale_price[]")
+            pack_wholesale_prices=request.form.getlist("pack_wholesale_price[]")
+            pack_costs=request.form.getlist("pack_cost[]")
+            for i, name in enumerate(pack_names):
+                name=(name or "").strip()
+                if not name: continue
+                psku=(pack_skus[i] if i < len(pack_skus) else "").strip() or generate_sku(c)
+                psize=float(pack_sizes[i] if i < len(pack_sizes) and pack_sizes[i] else 1)
+                psale=float(pack_sale_prices[i] if i < len(pack_sale_prices) and pack_sale_prices[i] else 0)
+                pwhole=float(pack_wholesale_prices[i] if i < len(pack_wholesale_prices) and pack_wholesale_prices[i] else 0)
+                pcost=float(pack_costs[i] if i < len(pack_costs) and pack_costs[i] else 0)
+                c.execute("""INSERT INTO product_packs(product_id,name,pack_size,sku,sale_price,wholesale_price,cost,sellable,purchasable)
+                             VALUES(?,?,?,?,?,?,?,?,?)""",(pid,name,psize,psku,psale,pwhole,pcost,1,1))
+            c.commit(); c.close(); flash("تم تحديث المنتج"); return redirect("/products")
+        except Exception as e:
+            c.rollback(); flash("تعذر الحفظ: "+str(e))
+    c.close(); return render_template("product_form.html",p=p,packs=packs,categories=cats,suppliers=sups)
 
 @app.route("/categories",methods=["GET","POST"])
 def categories():
