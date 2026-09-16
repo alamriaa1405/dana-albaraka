@@ -1,31 +1,171 @@
-{% extends "base.html" %}{% block page_title %}{{'تحرير المنتج' if p else 'منتج جديد'}}{% endblock %}{% block page_subtitle %}المنتجات › {{'تحرير' if p else 'منتج جديد'}}{% endblock %}{% block c %}
-<form method="post" class="product-form">
-<section class="panel"><h2>نوع المنتج</h2><div class="product-types"><label class="choice active"><input type="radio" checked> منتج من نوع واحد</label><label class="choice"><input type="radio"> منتج متعدد الأنواع</label><label class="choice"><input type="radio"> منتج مجمع</label></div></section>
-<section class="panel"><h2>المعلومات الرئيسية</h2><div class="form-grid">
-<div class="field span2"><label>اسم المنتج *</label><input name="name" value="{{p.name if p else ''}}" required></div>
-<div class="field"><label>SKU</label><input name="sku" value="{{p.sku if p else ''}}"></div>
-<div class="field"><label>باركود الحبة</label><input name="barcode_piece" value="{{p.barcode_piece if p else ''}}"></div>
-<div class="field"><label>باركود الحزمة</label><input name="barcode_pack" value="{{p.barcode_pack if p else ''}}"></div>
-<div class="field"><label>كمية الحزمة</label><input name="pack_qty" type="number" value="{{p.pack_qty if p else 1}}"></div>
-<div class="field"><label>باركود الكرتون</label><input name="barcode_carton" value="{{p.barcode_carton if p else ''}}"></div>
-<div class="field"><label>كمية الكرتون</label><input name="carton_qty" type="number" value="{{p.carton_qty if p else 1}}"></div>
-<div class="field span2"><label>الوصف</label><textarea name="description">{{p.description if p else ''}}</textarea></div>
-</div><div class="switches"><label><input type="checkbox" name="sellable" {% if not p or p.sellable %}checked{% endif %}> قابل للبيع</label><label><input type="checkbox" name="purchasable" {% if not p or p.purchasable %}checked{% endif %}> قابل للشراء</label></div></section>
-<section class="panel"><h2>المصدر والتتبع</h2><div class="switches"><label><input type="checkbox" name="track_stock" {% if not p or p.track_stock %}checked{% endif %}> تتبع كميات هذا المنتج</label><label><input type="checkbox" name="weighted" {% if p and p.weighted %}checked{% endif %}> منتج موزون</label></div></section>
-<section class="panel"><h2>الكميات والأسعار</h2><div class="form-grid">
-<div class="field"><label>الكمية الأولية</label><input name="stock" type="number" step="0.01" value="{{p.stock if p else 0}}"></div>
-<div class="field"><label>التكلفة الأولية</label><input name="cost" type="number" step="0.01" value="{{p.cost if p else 0}}"></div>
-<div class="field"><label>سعر التجزئة</label><input name="sale_price" type="number" step="0.01" value="{{p.sale_price if p else 0}}"></div>
-<div class="field"><label>سعر الجملة</label><input name="wholesale_price" type="number" step="0.01" value="{{p.wholesale_price if p else 0}}"></div>
-<div class="field"><label>الحد الأدنى للكمية</label><input name="min_stock" type="number" step="0.01" value="{{p.min_stock if p else 0}}"></div>
-<div class="field"><label>تاريخ الانتهاء</label><input name="expiry" type="date" value="{{p.expiry if p else ''}}"></div>
-<div class="field"><label>الوحدة</label><select name="unit"><option>حبة</option><option>كرتون</option><option>كجم</option></select></div>
-</div></section>
-<section class="panel"><h2>التصنيفات</h2><div class="form-grid">
-<div class="field"><label>الفئة</label><input name="category" value="{{p.category if p else ''}}" list="cats"><datalist id="cats">{% for x in categories %}<option>{{x.name}}</option>{% endfor %}</datalist></div>
-<div class="field"><label>المورد</label><select name="supplier_id"><option value="">—</option>{% for x in suppliers %}<option value="{{x.id}}" {% if p and p.supplier_id==x.id %}selected{% endif %}>{{x.name}}</option>{% endfor %}</select></div>
-<div class="field"><label>العلامة التجارية</label><input name="brand" value="{{p.brand if p else ''}}"></div>
-</div></section>
-<section class="panel"><h2>الصور والحقول المخصصة</h2><div class="dropzone">إضافة جميع الصور — JPEG / PNG / PDF</div><button type="button" class="ghost">+ أضف حقل مخصص</button></section>
-<div class="sticky-actions"><a class="btn ghost" href="/products">إلغاء</a><button class="primary">حفظ</button></div>
-</form>{% endblock %}
+{% extends "base.html" %}
+{% block page_title %}{{'تحرير المنتج' if p else 'منتج جديد'}}{% endblock %}
+{% block page_subtitle %}المنتجات › {{'تحرير' if p else 'منتج جديد'}}{% endblock %}
+{% block c %}
+<form method="post" class="product-form" id="productForm">
+
+<section class="panel">
+  <h2>نوع المنتج</h2>
+  <div class="product-types">
+    <label class="choice active"><input type="radio" checked> منتج من نوع واحد</label>
+    <label class="choice"><input type="radio"> منتج متعدد الأنواع</label>
+    <label class="choice"><input type="radio"> منتج مجمع</label>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>المعلومات الرئيسية</h2>
+  <div class="form-grid">
+    <div class="field span2">
+      <label>اسم المنتج *</label>
+      <input name="name" value="{{p.name if p else ''}}" required>
+    </div>
+
+    <div class="field span2">
+      <label>الرقم التعريفي SKU</label>
+      <div class="sku-row">
+        <input id="sku" name="sku" value="{{p.sku if p else ''}}" autocomplete="off"
+               placeholder="يُولد تلقائيًا أو امسح الباركود هنا">
+        <button type="button" class="ghost sku-generate" data-target="sku">↻ توليد الرمز</button>
+      </div>
+      <small>يمكن تركه فارغًا ليولده النظام تلقائيًا، أو قراءة الباركود في نفس الخانة.</small>
+    </div>
+
+    <div class="field span2">
+      <label>الوصف</label>
+      <textarea name="description">{{p.description if p else ''}}</textarea>
+    </div>
+  </div>
+
+  <div class="switches">
+    <label><input type="checkbox" name="sellable" {% if not p or p.sellable %}checked{% endif %}> قابل للبيع</label>
+    <label><input type="checkbox" name="purchasable" {% if not p or p.purchasable %}checked{% endif %}> قابل للشراء</label>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>الصور</h2>
+  <div class="dropzone">قم بسحب جميع الصور هنا أو اضغط للاختيار<br><small>JPEG / PNG — يمكن إضافة صور متعددة</small></div>
+</section>
+
+<section class="panel">
+  <h2>مصدر المنتج والتتبع</h2>
+  <div class="switches">
+    <label><input type="checkbox" name="track_stock" {% if not p or p.track_stock %}checked{% endif %}> تتبع كميات هذا المنتج</label>
+    <label><input type="checkbox" name="weighted" {% if p and p.weighted %}checked{% endif %}> منتج موزون</label>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>يباع هذا المنتج في حزمة</h2>
+      <p>يمكن إضافة أكثر من حجم حزمة، ولكل حزمة SKU مستقل.</p>
+    </div>
+    <label class="toggle-label">
+      <input id="bundleToggle" type="checkbox" {% if packs %}checked{% endif %}>
+      تفعيل الحزم
+    </label>
+  </div>
+
+  <div id="bundleArea" {% if not packs %}hidden{% endif %}>
+    <div id="packRows">
+      {% for pack in packs %}
+      <div class="pack-card">
+        <button type="button" class="pack-delete" title="حذف">🗑</button>
+        <div class="form-grid">
+          <div class="field"><label>اسم الحزمة</label><input name="pack_name[]" value="{{pack.name}}" placeholder="مثال: كرتون 24"></div>
+          <div class="field"><label>حجم الحزمة</label><input name="pack_size[]" value="{{pack.pack_size}}" type="number" min="1" step="1"></div>
+          <div class="field span2">
+            <label>SKU الحزمة</label>
+            <div class="sku-row">
+              <input name="pack_sku[]" value="{{pack.sku}}" autocomplete="off" placeholder="يُولد تلقائيًا أو امسح الباركود">
+              <button type="button" class="ghost sku-generate">↻ توليد</button>
+            </div>
+          </div>
+          <div class="field"><label>تكلفة الحزمة</label><input name="pack_cost[]" value="{{pack.cost}}" type="number" step="0.01"></div>
+          <div class="field"><label>سعر التجزئة للحزمة</label><input name="pack_sale_price[]" value="{{pack.sale_price}}" type="number" step="0.01"></div>
+          <div class="field"><label>سعر الجملة للحزمة</label><input name="pack_wholesale_price[]" value="{{pack.wholesale_price}}" type="number" step="0.01"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" id="addPack" class="btn bundle-add">+ أضف حقل مخصص / حزمة جديدة</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>كميات المنتج وأسعاره</h2>
+  <div class="form-grid">
+    <div class="field"><label>الكمية الأولية</label><input name="stock" type="number" step="0.01" value="{{p.stock if p else 0}}"></div>
+    <div class="field"><label>التكلفة الأولية</label><input name="cost" type="number" step="0.01" value="{{p.cost if p else 0}}"></div>
+    <div class="field"><label>سعر التجزئة شامل الضريبة</label><input name="sale_price" type="number" step="0.01" value="{{p.sale_price if p else 0}}"></div>
+    <div class="field"><label>سعر الجملة شامل الضريبة</label><input name="wholesale_price" type="number" step="0.01" value="{{p.wholesale_price if p else 0}}"></div>
+    <div class="field"><label>الحد الأدنى للكمية</label><input name="min_stock" type="number" step="0.01" value="{{p.min_stock if p else 0}}"></div>
+    <div class="field"><label>تاريخ الانتهاء</label><input name="expiry" type="date" value="{{p.expiry if p else ''}}"></div>
+    <div class="field"><label>الوحدة</label><select name="unit"><option>حبة</option><option>كرتون</option><option>كجم</option></select></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>التصنيفات</h2>
+  <div class="form-grid">
+    <div class="field"><label>الفئة</label><input name="category" value="{{p.category if p else ''}}" list="cats"><datalist id="cats">{% for x in categories %}<option>{{x.name}}</option>{% endfor %}</datalist></div>
+    <div class="field"><label>المورد</label><select name="supplier_id"><option value="">—</option>{% for x in suppliers %}<option value="{{x.id}}" {% if p and p.supplier_id==x.id %}selected{% endif %}>{{x.name}}</option>{% endfor %}</select></div>
+    <div class="field"><label>العلامة التجارية</label><input name="brand" value="{{p.brand if p else ''}}"></div>
+  </div>
+</section>
+
+<div class="sticky-actions">
+  <a class="btn ghost" href="/products">إلغاء</a>
+  <button class="primary">حفظ</button>
+</div>
+</form>
+
+<template id="packTemplate">
+  <div class="pack-card">
+    <button type="button" class="pack-delete" title="حذف">🗑</button>
+    <div class="form-grid">
+      <div class="field"><label>اسم الحزمة</label><input name="pack_name[]" placeholder="مثال: كرتون 24"></div>
+      <div class="field"><label>حجم الحزمة</label><input name="pack_size[]" value="1" type="number" min="1" step="1"></div>
+      <div class="field span2">
+        <label>SKU الحزمة</label>
+        <div class="sku-row">
+          <input name="pack_sku[]" autocomplete="off" placeholder="يُولد تلقائيًا أو امسح الباركود">
+          <button type="button" class="ghost sku-generate">↻ توليد</button>
+        </div>
+      </div>
+      <div class="field"><label>تكلفة الحزمة</label><input name="pack_cost[]" type="number" step="0.01" value="0"></div>
+      <div class="field"><label>سعر التجزئة للحزمة</label><input name="pack_sale_price[]" type="number" step="0.01" value="0"></div>
+      <div class="field"><label>سعر الجملة للحزمة</label><input name="pack_wholesale_price[]" type="number" step="0.01" value="0"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+async function generateSku(target){
+  const r=await fetch('/api/generate-sku');
+  const d=await r.json();
+  if(d.ok) target.value=d.sku;
+}
+document.addEventListener('click',e=>{
+  const g=e.target.closest('.sku-generate');
+  if(g){
+    const row=g.closest('.sku-row');
+    generateSku(row.querySelector('input'));
+  }
+  const del=e.target.closest('.pack-delete');
+  if(del) del.closest('.pack-card').remove();
+});
+const toggle=document.getElementById('bundleToggle');
+const area=document.getElementById('bundleArea');
+toggle.addEventListener('change',()=>{
+  area.hidden=!toggle.checked;
+  if(toggle.checked && !document.querySelector('.pack-card')) document.getElementById('addPack').click();
+});
+document.getElementById('addPack').addEventListener('click',()=>{
+  const node=document.getElementById('packTemplate').content.cloneNode(true);
+  document.getElementById('packRows').appendChild(node);
+});
+</script>
+{% endblock %}
