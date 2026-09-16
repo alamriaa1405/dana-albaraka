@@ -1,1 +1,45 @@
-{% extends "base.html" %}{% block c %}<h1>نقطة البيع</h1><p>الحبة والحزمة والكرتون مرتبطة تلقائياً بالكمية. الفاتورة لا تُحذف ولا تُعدّل بعد اعتمادها.</p><form method="post" class="pos"><input autofocus name="barcode" placeholder="امسح الباركود" required><input name="qty" type="number" step=".01" value="1"><select name="customer_id"><option value="">بدون عميل</option>{% for c in customers %}<option value="{{c.id}}">{{c.name}}</option>{% endfor %}</select><select name="payment_method"><option>نقدي</option><option>شبكة</option><option>آجل</option></select><button>بيع واعتماد الفاتورة</button></form>{% endblock %}
+
+{% extends "base.html" %}
+{% block page_title %}نقطة البيع{% endblock %}
+{% block page_subtitle %}بيع سريع بالكود أو قارئ الباركود{% endblock %}
+{% block c %}
+<div class="pos-layout">
+  <section class="panel pos-card">
+    <div class="panel-head"><div><h2>بيع منتج</h2><p>الخانة التالية تقبل الكود أو أي باركود مرتبط بالمنتج</p></div></div>
+    <form method="post" class="pos-form">
+      <label>كود / باركود المنتج</label>
+      <input class="scan-input" name="barcode" id="barcode" autofocus autocomplete="off" placeholder="امسح الباركود هنا" required>
+      <small id="saleHint" class="muted"></small>
+      <div class="two">
+        <input name="qty" type="number" step="0.01" value="1" min="0.01" placeholder="الكمية">
+        <select name="payment_method">
+          <option>نقدي</option><option>مدى</option><option>تحويل</option><option>آجل</option>
+        </select>
+      </div>
+      <select name="customer_id">
+        <option value="">العميل (اختياري)</option>
+        {% for c in customers %}<option value="{{c.id}}">{{c.name}}{% if c.balance %} — عليه {{c.balance}} ر.س{% endif %}</option>{% endfor %}
+      </select>
+      <button class="primary big">إتمام البيع</button>
+    </form>
+  </section>
+
+  <section class="panel help-card">
+    <h2>ملاحظات نقطة البيع</h2>
+    <p>يمكن استخدام نفس الخانة لباركود الحبة أو الحزمة أو الكرتون أو رقم المنتج.</p>
+    <p>الفاتورة بعد البيع لا يمكن تعديلها أو حذفها، ويكون المرتجع بقيد عكسي.</p>
+  </section>
+</div>
+<script>
+const b=document.getElementById('barcode'), h=document.getElementById('saleHint');
+let z;
+b.addEventListener('input',()=>{clearTimeout(z);z=setTimeout(async()=>{
+ if(!b.value.trim()){h.textContent='';return;}
+ try{
+  const r=await fetch('/api/product-by-code?code='+encodeURIComponent(b.value.trim()));
+  const d=await r.json();
+  h.textContent=d.ok ? '✓ '+d.name+' — السعر '+d.sale_price+' ر.س — المتوفر '+d.stock : 'المنتج غير موجود';
+ }catch(e){h.textContent='';}
+},120)});
+</script>
+{% endblock %}

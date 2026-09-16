@@ -1,1 +1,82 @@
-{% extends "base.html" %}{% block c %}<h1>لوحة التحكم</h1><div class="cards"><div class="card"><span>مبيعات اليوم</span><b>{{"%.2f"|format(sales_today)}} ر.س</b></div><div class="card"><span>مصروفات اليوم</span><b>{{"%.2f"|format(expenses_today)}} ر.س</b></div><div class="card"><span>قيمة المخزون</span><b>{{"%.2f"|format(stock_value)}} ر.س</b></div><div class="card"><span>مخزون منخفض</span><b>{{low}}</b></div><div class="card"><span>قريب الانتهاء</span><b>{{exp}}</b></div><div class="card"><span>راكدة 60+ يوم</span><b>{{stale}}</b></div></div><h2>آخر الفواتير</h2><table><tr><th>رقم</th><th>التاريخ</th><th>الإجمالي</th><th>الحالة</th><th></th></tr>{% for x in recent %}<tr><td>{{x.id}}</td><td>{{x.created_at}}</td><td>{{x.total}}</td><td>{{x.status}}</td><td><a href="/invoice/{{x.id}}">عرض</a></td></tr>{% endfor %}</table>{% endblock %}
+
+{% extends "base.html" %}
+{% block page_title %}لوحة التحكم{% endblock %}
+{% block page_subtitle %}نظرة عامة{% endblock %}
+{% block c %}
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-label">إجمالي البيع</div>
+    <div class="metric-value">{{"%.2f"|format(sales_today)}} <small>ر.س</small></div>
+    <div class="metric-sub">مبيعات اليوم</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">قيمة المخزون</div>
+    <div class="metric-value">{{"%.2f"|format(stock_value)}} <small>ر.س</small></div>
+    <div class="metric-sub">القيمة الحالية</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">مصروفات اليوم</div>
+    <div class="metric-value">{{"%.2f"|format(expenses_today)}} <small>ر.س</small></div>
+    <div class="metric-sub">إجمالي المصروفات</div>
+  </div>
+  <div class="metric-card accent-card">
+    <div class="metric-label">التنبيهات</div>
+    <div class="alerts-mini">
+      <span>مخزون منخفض <b>{{low}}</b></span>
+      <span>قريب الانتهاء <b>{{exp}}</b></span>
+      <span>راكدة 60+ يوم <b>{{stale}}</b></span>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <section class="panel chart-panel">
+    <div class="panel-head">
+      <div><h2>تحصيل المبيعات</h2><p>آخر 14 يومًا</p></div>
+    </div>
+    <canvas id="salesChart" height="110"></canvas>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>اختصارات سريعة</h2><p>الوصول لأكثر المهام استخدامًا</p></div>
+    </div>
+    <div class="quick-grid">
+      <a href="/pos">نقطة البيع</a>
+      <a href="/products">إضافة منتج</a>
+      <a href="/purchase">فاتورة شراء</a>
+      <a href="/expenses">إضافة مصروف</a>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head">
+    <div><h2>آخر الفواتير</h2><p>أحدث عمليات البيع</p></div>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>رقم</th><th>التاريخ</th><th>الإجمالي</th><th>الحالة</th><th></th></tr>
+    {% for x in recent %}
+    <tr>
+      <td>#{{x.id}}</td>
+      <td>{{x.created_at[:16]}}</td>
+      <td>{{"%.2f"|format(x.total)}} ر.س</td>
+      <td><span class="status {{'ok' if x.status=='مكتملة' else 'warn'}}">{{x.status}}</span></td>
+      <td><a class="link-btn" href="/invoice/{{x.id}}">عرض</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+</section>
+
+<script>
+const labels={{ chart_labels|tojson }};
+const values={{ chart_values|tojson }};
+new Chart(document.getElementById('salesChart'),{
+  type:'line',
+  data:{labels:labels,datasets:[{label:'المبيعات',data:values,fill:true,tension:.38,borderWidth:2}]},
+  options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}
+});
+</script>
+{% endblock %}

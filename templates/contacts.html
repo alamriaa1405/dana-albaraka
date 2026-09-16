@@ -1,2 +1,25 @@
-{% extends "base.html" %}{% block c %}<h1>العملاء والموردون</h1><form method="post" class="grid"><select name="type"><option value="customer">عميل</option><option value="supplier">مورد</option></select><input name="name" placeholder="الاسم" required><input name="phone" placeholder="الجوال"><button>إضافة</button></form>
-<div class="cols"><div><h2>العملاء</h2>{% for x in customers %}<p>{{x.name}} — {{x.phone or "-"}}</p>{% endfor %}</div><div><h2>الموردون</h2>{% for x in suppliers %}<p>{{x.name}} — {{x.phone or "-"}}</p>{% endfor %}</div></div>{% endblock %}
+
+{% extends "base.html" %}
+{% block page_title %}العملاء والموردون{% endblock %}
+{% block page_subtitle %}إدارة بيانات العملاء والموردين{% endblock %}
+{% block c %}
+<div class="dashboard-grid">
+<section class="panel">
+  <h2>إضافة جهة</h2>
+  <form method="post" class="stack">
+    <select name="type"><option value="customer">عميل</option><option value="supplier">مورد</option></select>
+    <input name="name" placeholder="الاسم" required>
+    <input name="phone" placeholder="رقم الجوال">
+    <button class="primary">إضافة</button>
+  </form>
+</section>
+<section class="panel">
+  <h2>العملاء</h2>
+  <div class="table-wrap"><table><tr><th>الاسم</th><th>الجوال</th><th>الرصيد</th></tr>{% for x in customers %}<tr><td>{{x.name}}</td><td>{{x.phone or '-'}}</td><td>{{x.balance}}</td></tr>{% endfor %}</table></div>
+</section>
+</div>
+<section class="panel">
+  <h2>الموردون</h2>
+  <div class="table-wrap"><table><tr><th>الاسم</th><th>الجوال</th><th>الرصيد</th></tr>{% for x in suppliers %}<tr><td>{{x.name}}</td><td>{{x.phone or '-'}}</td><td>{{x.balance}}</td></tr>{% endfor %}</table></div>
+</section>
+{% endblock %}

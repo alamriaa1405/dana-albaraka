@@ -1,9 +1,60 @@
-{% extends "base.html" %}{% block c %}<h1>المنتجات والمخزون</h1><form method="post" class="grid">
-<input name="name" placeholder="اسم المنتج" required><input name="category" placeholder="التصنيف (اختياري)">
-<input name="barcode_piece" placeholder="باركود الحبة"><input name="barcode_pack" placeholder="باركود الحزمة"><input name="pack_qty" type="number" placeholder="عدد الحبات بالحزمة">
-<input name="barcode_carton" placeholder="باركود الكرتون"><input name="carton_qty" type="number" placeholder="عدد الحبات بالكرتون">
-<input name="cost" type="number" step=".01" placeholder="التكلفة"><input name="sale_price" type="number" step=".01" placeholder="سعر البيع">
-<input name="stock" type="number" step=".01" placeholder="الرصيد"><input name="min_stock" type="number" step=".01" placeholder="حد التنبيه">
-<input name="expiry" type="date"><button>إضافة المنتج</button></form>
-<table><tr><th>المنتج</th><th>الباركود</th><th>التكلفة</th><th>البيع</th><th>الرصيد</th><th>الصلاحية</th></tr>
-{% for p in rows %}<tr><td>{{p.name}}</td><td>{{p.barcode_piece or "-"}}</td><td>{{p.cost}}</td><td>{{p.sale_price}}</td><td>{{p.stock}}</td><td>{{p.expiry or "-"}}</td></tr>{% endfor %}</table>{% endblock %}
+
+{% extends "base.html" %}
+{% block page_title %}المنتجات والمخزون{% endblock %}
+{% block page_subtitle %}إضافة وتحرير وحذف المنتجات والبحث بالكود أو الباركود{% endblock %}
+{% block c %}
+<section class="panel">
+  <div class="panel-head">
+    <div><h2>إضافة منتج</h2><p>يمكن استخدام الباركود أو رقم الكود</p></div>
+  </div>
+  <form method="post" class="form-grid">
+    <input name="name" placeholder="اسم المنتج" required>
+    <input name="category" placeholder="التصنيف">
+    <select name="unit"><option>حبة</option><option>كرتون</option><option>كجم</option></select>
+    <input name="barcode_piece" placeholder="باركود الحبة / الكود الرئيسي">
+    <input name="barcode_pack" placeholder="باركود الحزمة">
+    <input name="pack_qty" type="number" value="1" min="1" placeholder="كمية الحزمة">
+    <input name="barcode_carton" placeholder="باركود الكرتون">
+    <input name="carton_qty" type="number" value="1" min="1" placeholder="كمية الكرتون">
+    <input name="cost" type="number" step="0.01" placeholder="التكلفة">
+    <input name="sale_price" type="number" step="0.01" placeholder="سعر البيع">
+    <input name="stock" type="number" step="0.01" placeholder="الكمية الحالية">
+    <input name="min_stock" type="number" step="0.01" placeholder="الحد الأدنى">
+    <input name="expiry" type="date">
+    <button class="primary">إضافة المنتج</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div><h2>قائمة المنتجات</h2><p>ابحث بالاسم أو الكود أو الباركود</p></div>
+    <form method="get" class="search-inline">
+      <input name="q" value="{{q}}" placeholder="اكتب أو امسح الباركود">
+      <button>بحث</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>الكود</th><th>المنتج</th><th>الباركود</th><th>المخزون</th><th>التكلفة</th><th>البيع</th><th>إجراءات</th></tr>
+    {% for p in rows %}
+    <tr>
+      <td>{{p.id}}</td>
+      <td><b>{{p.name}}</b><small class="muted">{{p.category or ''}}</small></td>
+      <td>{{p.barcode_piece or '-'}}</td>
+      <td>{{p.stock}}</td>
+      <td>{{"%.2f"|format(p.cost)}} ر.س</td>
+      <td>{{"%.2f"|format(p.sale_price)}} ر.س</td>
+      <td class="actions">
+        <a class="link-btn" href="/products/edit/{{p.id}}">تحرير</a>
+        {% if session.role=='مشرف' %}
+        <form method="post" action="/products/delete/{{p.id}}" onsubmit="return confirm('حذف المنتج؟')">
+          <button class="danger ghost">حذف</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+</section>
+{% endblock %}
