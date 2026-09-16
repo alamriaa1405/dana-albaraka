@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block c %}<h1>تقرير المبيعات</h1><table><tr><th>اليوم</th><th>عدد الفواتير</th><th>المبيعات</th></tr>{% for x in sales %}<tr><td>{{x.d}}</td><td>{{x.n}}</td><td>{{"%.2f"|format(x.total)}} ر.س</td></tr>{% endfor %}</table>{% endblock %}

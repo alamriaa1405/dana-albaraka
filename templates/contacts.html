@@ -1,0 +1,2 @@
+{% extends "base.html" %}{% block c %}<h1>العملاء والموردون</h1><form method="post" class="grid"><select name="type"><option value="customer">عميل</option><option value="supplier">مورد</option></select><input name="name" placeholder="الاسم" required><input name="phone" placeholder="الجوال"><button>إضافة</button></form>
+<div class="cols"><div><h2>العملاء</h2>{% for x in customers %}<p>{{x.name}} — {{x.phone or "-"}}</p>{% endfor %}</div><div><h2>الموردون</h2>{% for x in suppliers %}<p>{{x.name}} — {{x.phone or "-"}}</p>{% endfor %}</div></div>{% endblock %}
