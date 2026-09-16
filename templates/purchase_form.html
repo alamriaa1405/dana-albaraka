@@ -70,6 +70,54 @@
   .top-invoice{grid-column:2;grid-row:2}
 }
 
+
+/* تحسين نهائي للجوال والكمبيوتر */
+.panel{padding:18px}
+.purchase-top-grid{gap:12px 18px}
+.purchase-top-grid .field{margin:0}
+.purchase-top-grid .field label{margin-bottom:4px;font-size:14px}
+.purchase-top-grid input,
+.purchase-top-grid select{height:42px;min-height:42px;padding-top:6px;padding-bottom:6px}
+
+.inline-supplier{
+  grid-template-columns:minmax(0,1fr) 40px;
+  gap:6px
+}
+.inline-supplier .supplier-add{
+  width:40px;
+  min-width:40px;
+  height:42px;
+  font-size:20px
+}
+
+.purchase-search{margin:10px 0}
+.purchase-empty{padding:26px 12px}
+.payment-bottom{margin-top:12px}
+
+@media(max-width:560px){
+  .panel{padding:14px}
+  .purchase-top-grid{grid-template-columns:1fr;gap:8px}
+  .purchase-top-grid .field label{margin-bottom:3px;font-size:13px}
+  .purchase-top-grid input,
+  .purchase-top-grid select{height:40px;min-height:40px}
+  .inline-supplier{grid-template-columns:minmax(0,1fr) 38px}
+  .inline-supplier .supplier-add{
+    width:38px;
+    min-width:38px;
+    height:40px
+  }
+  .purchase-search{margin:8px 0}
+  .purchase-empty{padding:22px 10px}
+  .sticky-actions{
+    position:static !important;
+    display:flex;
+    gap:8px;
+    margin-top:12px
+  }
+  .sticky-actions .btn,
+  .sticky-actions button{flex:1}
+}
+
 </style>
 
 <form method="post" id="purchaseForm">
