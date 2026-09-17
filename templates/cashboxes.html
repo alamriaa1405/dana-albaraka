@@ -1,2 +1,38 @@
-{% extends "base.html" %}{% block page_title %}صناديق البيع{% endblock %}{% block page_subtitle %}إدارة صناديق نقاط البيع{% endblock %}{% block c %}
-<div class="toolbar"><input placeholder="البحث باسم الموقع أو صندوق البيع"><button class="primary">+ صندوق بيع جديد</button></div><div class="cards-list">{% for x in rows %}<div class="box-card"><div><h3>{{x.name}}</h3><span class="badge ok">{{x.status}}</span></div><p>{{x.location}}</p><p>المستخدم: {{x.user or '-'}}</p><div><button class="ghost">إعدادات</button><a class="btn" href="/pos">متابعة البيع</a></div></div>{% endfor %}</div>{% endblock %}
+{% extends "base.html" %}{% block page_title %}صناديق البيع{% endblock %}{% block page_subtitle %}إدارة صناديق نقاط البيع وربطها بالمستخدمين{% endblock %}{% block c %}
+{% if session.role == 'مشرف' %}
+<details class="panel cashbox-create">
+  <summary class="primary btn">+ صندوق بيع جديد</summary>
+  <form method="post" class="form-grid cashbox-form">
+    <label class="field"><span>اسم الصندوق</span><input name="name" placeholder="مثال: الصندوق الرئيسي" required></label>
+    <label class="field"><span>الموقع</span><input name="location" value="الفرع الرئيسي" required></label>
+    <label class="field"><span>المستخدم</span><input name="user" placeholder="اسم المستخدم"></label>
+    <label class="field"><span>الحالة</span><select name="status"><option>نشط</option><option>غير نشط</option></select></label>
+    <button class="primary">حفظ صندوق البيع</button>
+  </form>
+</details>
+{% endif %}
+<div class="toolbar"><input id="cashboxSearch" placeholder="البحث باسم الموقع أو صندوق البيع" oninput="filterCashboxes()"></div>
+<div class="cards-list" id="cashboxList">
+{% for x in rows %}
+  <article class="box-card cashbox-card" data-search="{{x.name}} {{x.location}} {{x.user or ''}}">
+    <div><h3>{{x.name}}</h3><span class="badge {{'ok' if x.status=='نشط' else 'warn'}}">{{x.status}}</span></div>
+    <p>الموقع: {{x.location}}</p><p>المستخدم: {{x.user or 'غير محدد'}}</p>
+    <div class="cashbox-actions">
+      {% if session.role == 'مشرف' %}<button type="button" class="ghost" onclick="this.closest('.box-card').querySelector('details').toggleAttribute('open')">إعدادات</button>{% endif %}
+      {% if x.status == 'نشط' %}<a class="btn primary" href="/pos?cashbox_id={{x.id}}">متابعة البيع</a>{% endif %}
+    </div>
+    {% if session.role == 'مشرف' %}
+    <details class="cashbox-settings"><summary>تعديل بيانات الصندوق</summary>
+      <form method="post" action="/sales/cashboxes/{{x.id}}/edit" class="stack">
+        <input name="name" value="{{x.name}}" required><input name="location" value="{{x.location}}" required>
+        <input name="user" value="{{x.user or ''}}" placeholder="اسم المستخدم">
+        <select name="status"><option {% if x.status=='نشط' %}selected{% endif %}>نشط</option><option {% if x.status!='نشط' %}selected{% endif %}>غير نشط</option></select>
+        <button class="primary">حفظ التعديلات</button>
+      </form>
+    </details>
+    {% endif %}
+  </article>
+{% else %}<div class="panel">لا توجد صناديق بيع مضافة.</div>{% endfor %}
+</div>
+<script>function filterCashboxes(){const q=cashboxSearch.value.trim().toLowerCase();document.querySelectorAll('.cashbox-card').forEach(x=>x.hidden=!x.dataset.search.toLowerCase().includes(q))}</script>
+{% endblock %}
