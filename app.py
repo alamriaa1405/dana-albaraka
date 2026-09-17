@@ -251,7 +251,7 @@ def init_db():
         ],
         "customers":["email TEXT","credit_limit REAL DEFAULT 0","active INTEGER DEFAULT 1"],
         "suppliers":["email TEXT","city TEXT","credit_limit REAL DEFAULT 0","active INTEGER DEFAULT 1"],
-        "sales":["location TEXT DEFAULT 'الفرع الرئيسي'","employee TEXT","paid REAL DEFAULT 0"],
+        "sales":["location TEXT DEFAULT 'الفرع الرئيسي'","employee TEXT","paid REAL DEFAULT 0","cashbox_id INTEGER"],
         "expenses":["category TEXT","location TEXT DEFAULT 'الفرع الرئيسي'","status TEXT DEFAULT 'مدفوع'"],
         "purchases":["supplier_invoice_date TEXT","due_date TEXT"],
         "purchase_items":["discount REAL DEFAULT 0","vat_rate REAL DEFAULT 15","tax_amount REAL DEFAULT 0"],
@@ -388,21 +388,25 @@ def api_product():
 def pos():
     if not allowed("بيع"): flash("لا توجد صلاحية"); return redirect("/")
     c=db(); customers=c.execute("SELECT * FROM customers WHERE active=1 ORDER BY name").fetchall()
+    cashboxes=c.execute("SELECT * FROM cashboxes WHERE status='نشط' ORDER BY name").fetchall()
     if request.method=="POST":
+        cashbox_id=request.form.get("cashbox_id")
+        cashbox=c.execute("SELECT * FROM cashboxes WHERE id=? AND status='نشط'",(cashbox_id,)).fetchone()
+        if not cashbox: c.close(); flash("اختر صندوق بيع نشط"); return redirect("/pos")
         p=find_product(c,request.form["barcode"]); q=float(request.form.get("qty") or 1)
         if not p: c.close(); flash("الكود أو الباركود غير موجود"); return redirect("/pos")
         rq=q*float(p["mult"] or 1)
         if p["track_stock"] and float(p["stock"] or 0)<rq: c.close(); flash("الكمية غير كافية"); return redirect("/pos")
         total=rq*float(p["sale_price"] or 0); cid=request.form.get("customer_id") or None; method=request.form.get("payment_method") or "نقدي"
         paid=total if method!="آجل" else 0
-        cur=c.execute("""INSERT INTO sales(created_at,customer_id,total,payment_method,status,location,employee,paid)
-                         VALUES(?,?,?,?,?,?,?,?)""",(now(),cid,total,method,"مكتملة","الفرع الرئيسي",session.get("user"),paid))
+        cur=c.execute("""INSERT INTO sales(created_at,customer_id,total,payment_method,status,location,employee,paid,cashbox_id)
+                         VALUES(?,?,?,?,?,?,?,?,?)""",(now(),cid,total,method,"مكتملة",cashbox["location"],session.get("user"),paid,cashbox["id"]))
         sid=cur.lastrowid
         c.execute("INSERT INTO sale_items(sale_id,product_id,qty,price,subtotal) VALUES(?,?,?,?,?)",(sid,p["id"],rq,p["sale_price"],total))
         if p["track_stock"]: c.execute("UPDATE products SET stock=stock-?,last_sale=? WHERE id=?",(rq,date.today().isoformat(),p["id"]))
         if method=="آجل" and cid: c.execute("UPDATE customers SET balance=balance+? WHERE id=?",(total,cid))
         c.commit(); c.close(); audit("بيع",f"فاتورة {sid}"); return redirect(f"/invoice/{sid}")
-    c.close(); return render_template("pos.html",customers=customers)
+    c.close(); return render_template("pos.html",customers=customers,cashboxes=cashboxes)
 
 @app.route("/sales/invoices")
 def sales_invoices():
@@ -415,10 +419,30 @@ def sales_invoices():
     rows=c.execute(sql,params).fetchall(); c.close()
     return render_template("sales_invoices.html",rows=rows,q=q)
 
-@app.route("/sales/cashboxes")
+@app.route("/sales/cashboxes",methods=["GET","POST"])
 def cashboxes():
-    c=db(); rows=c.execute("SELECT * FROM cashboxes ORDER BY id DESC").fetchall(); c.close()
+    c=db()
+    if request.method=="POST":
+        if session.get("role")!="مشرف": c.close(); flash("إدارة الصناديق للمشرف فقط"); return redirect("/sales/cashboxes")
+        name=(request.form.get("name") or "").strip()
+        if not name: c.close(); flash("اكتب اسم صندوق البيع"); return redirect("/sales/cashboxes")
+        c.execute("INSERT INTO cashboxes(name,location,user,status) VALUES(?,?,?,?)",
+                  (name,(request.form.get("location") or "الفرع الرئيسي").strip(),(request.form.get("user") or "").strip(),request.form.get("status") or "نشط"))
+        c.commit(); c.close(); audit("إضافة صندوق بيع",name); flash("تمت إضافة صندوق البيع"); return redirect("/sales/cashboxes")
+    rows=c.execute("SELECT * FROM cashboxes ORDER BY CASE status WHEN 'نشط' THEN 0 ELSE 1 END,id DESC").fetchall(); c.close()
     return render_template("cashboxes.html",rows=rows)
+
+@app.route("/sales/cashboxes/<int:cashbox_id>/edit",methods=["POST"])
+def cashbox_edit(cashbox_id):
+    if session.get("role")!="مشرف": flash("إدارة الصناديق للمشرف فقط"); return redirect("/sales/cashboxes")
+    c=db(); row=c.execute("SELECT * FROM cashboxes WHERE id=?",(cashbox_id,)).fetchone()
+    if not row: c.close(); flash("صندوق البيع غير موجود"); return redirect("/sales/cashboxes")
+    name=(request.form.get("name") or "").strip()
+    if not name: c.close(); flash("اكتب اسم صندوق البيع"); return redirect("/sales/cashboxes")
+    c.execute("UPDATE cashboxes SET name=?,location=?,user=?,status=? WHERE id=?",
+              (name,(request.form.get("location") or "الفرع الرئيسي").strip(),(request.form.get("user") or "").strip(),request.form.get("status") or "نشط",cashbox_id))
+    c.commit(); c.close(); audit("تعديل صندوق بيع",f"{cashbox_id} - {name}"); flash("تم حفظ إعدادات صندوق البيع")
+    return redirect("/sales/cashboxes")
 
 @app.route("/sales/digital-menu")
 def digital_menu(): return render_template("simple_page.html",title="المنيو الرقمي",subtitle="إدارة قوائم العرض الرقمية",items=["إنشاء قائمة رقمية","ربط المنتجات","تخصيص العرض"])
